@@ -1,3 +1,5 @@
+import { DIAGNOSTIC_BANK } from "./diagnostic-bank.js";
+
 export const EF_LANGUAGES = {
     en: {
         name: "Inglês",
@@ -634,3 +636,9 @@ export const EF_LANGUAGES = {
         ]
     }
 };
+
+
+// O diagnóstico oficial usa o banco amplo de evidências, não os três exemplos legados.
+Object.entries(EF_LANGUAGES).forEach(([code, language]) => {
+    language.diagnostic = DIAGNOSTIC_BANK[code] || [];
+});
