@@ -28,9 +28,11 @@ class EFFinish extends HTMLElement {
         const plan = {
             review: currentPlan.review || "Revisão rápida de vocabulário básico",
             lesson: currentPlan.lesson || "Expressões essenciais de conversação",
-            conversation: currentPlan.conversation || `Prática contextualizada sobre “${interest}”`
+            communication: currentPlan.communication || `Communication Lab sobre “${interest}”`
         };
         state.updateDailyPlan(plan);
+        const languageRecord = state.getLanguage(state.currentLanguage);
+        if (languageRecord) languageRecord.dailyPlan = { ...plan };
         storage.save();
         this.render(plan);
     }
@@ -42,7 +44,7 @@ class EFFinish extends HTMLElement {
         const timeDisplay = Number(this.profile.dailyMinutes) > 0
             ? `${Number(this.profile.dailyMinutes)} minutos`
             : "A definir";
-        const levelDisplay = `${this.profile.levelTag || "A1"} (nível ${Number(this.profile.level) || 1})`;
+        const journeyDisplay = this.profile.journeyLabel || this.profile.levelTag || "Diagnóstico pendente";
         const interests = this.profile.goalDetails?.interests?.length
             ? this.profile.goalDetails.interests.join(", ")
             : "Temas variados";
@@ -58,7 +60,7 @@ class EFFinish extends HTMLElement {
                 <ul class="finish-list">
                     <li class="fact"><strong>Idioma</strong><small>${escapeHTML(languageName)}</small></li>
                     <li class="fact"><strong>Mentor</strong><small>${escapeHTML(mentorName)}</small></li>
-                    <li class="fact"><strong>Nível inicial</strong><small>${escapeHTML(levelDisplay)}</small></li>
+                    <li class="fact"><strong>Jornada inicial</strong><small>${escapeHTML(journeyDisplay)}</small></li>
                     <li class="fact"><strong>Tempo diário</strong><small>${escapeHTML(timeDisplay)}</small></li>
                     <li class="fact"><strong>Interesses</strong><small>${escapeHTML(interests)}</small></li>
                 </ul>
@@ -67,7 +69,7 @@ class EFFinish extends HTMLElement {
                     <ul class="finish-list finish-plan-list">
                         <li class="small-text">✓ <strong>${escapeHTML(plan.review)}</strong></li>
                         <li class="small-text">✓ <strong>${escapeHTML(plan.lesson)}</strong></li>
-                        <li class="small-text">✓ <strong>${escapeHTML(plan.conversation)}</strong></li>
+                        <li class="small-text">✓ <strong>${escapeHTML(plan.communication)}</strong></li>
                     </ul>
                 </div>
                 <div class="mentor-section">

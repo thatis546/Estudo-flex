@@ -1,6 +1,6 @@
 import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
-import { state } from "../../core/state.js";
+import { state, createEmptyDiagnosticResult } from "../../core/state.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
 
 const FLOW = [
@@ -209,7 +209,9 @@ class EFOnboarding extends HTMLElement {
                 name: language.name,
                 flag: language.flag || "🌍",
                 mentor: language.mentor || "",
-                level: existingLanguage?.level || "A1",
+                level: existingLanguage?.level || "",
+                setupComplete: Boolean(existingLanguage?.setupComplete),
+                setupStatus: existingLanguage?.setupStatus || "setup-required",
                 xp: existingLanguage?.xp || 0,
                 progress: existingLanguage?.progress || 0,
                 diagnosticScore: existingLanguage?.diagnosticScore || 0,
@@ -336,24 +338,19 @@ class EFOnboarding extends HTMLElement {
             }
             state.setCurrentLanguage("");
             state.updateProfile({
-                level: 1,
-                levelTag: "A1",
+                journeyId: "",
+                journeyLabel: "",
+                level: 0,
+                levelTag: "",
                 diagnosticScore: 0,
                 diagnosticAnswers: [],
                 diagnosticProgress: {
                     step: 0,
                     answers: [],
                     scores: [],
-                    currentDifficulty: 3
+                    questionIds: []
                 },
-                levelResult: {
-                    cefr: "A1",
-                    score: 0,
-                    confidence: 0,
-                    strengths: [],
-                    weaknesses: [],
-                    completedAt: null
-                }
+                levelResult: createEmptyDiagnosticResult()
             });
         }
         storage.save();

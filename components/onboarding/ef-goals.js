@@ -23,16 +23,11 @@ class EFGoals extends HTMLElement {
             router.navigate("welcome", "replace");
             return;
         }
-
         const saved = state.profile.goalDetails || {};
         this.selectedDeadline = saved.deadline || "";
         this.selectedFrequency = saved.frequency || "";
-        this.selectedInterests = new Set(
-            Array.isArray(saved.interests) ? saved.interests.filter(Boolean) : []
-        );
-        this.availableInterests = Array.from(
-            new Set([...DEFAULT_INTERESTS, ...this.selectedInterests])
-        );
+        this.selectedInterests = new Set(Array.isArray(saved.interests) ? saved.interests.filter(Boolean) : []);
+        this.availableInterests = Array.from(new Set([...DEFAULT_INTERESTS, ...this.selectedInterests]));
         this.render();
     }
 
@@ -40,10 +35,20 @@ class EFGoals extends HTMLElement {
         this.innerHTML = `
             <div class="screen-header">
                 <p class="eyebrow">PASSO 2 DE 3</p>
-                <h1>Personalize seus objetivos</h1>
+                <h1>Para que esta língua fará parte da sua vida?</h1>
+                <p>O objetivo precisa ser específico para este idioma. Outros idiomas terão suas próprias respostas.</p>
             </div>
             <article class="card">
                 <div class="goals-body">
+                    <div class="form-field">
+                        <label for="goalDescription">Explique por que você quer aprender esta língua</label>
+                        <textarea id="goalDescription" rows="4" maxlength="500" placeholder="Ex.: quero estudar engenharia na França e conseguir acompanhar aulas, projetos e conversas com colegas."></textarea>
+                        <small>Quanto mais concreto, melhor será a adaptação do plano.</small>
+                    </div>
+                    <div class="form-field">
+                        <label for="useCase">Em qual situação real você pretende usá-la?</label>
+                        <textarea id="useCase" rows="4" maxlength="500" placeholder="Ex.: universidade, reuniões de trabalho, viagens, conversar com familiares ou morar no exterior."></textarea>
+                    </div>
                     <fieldset class="mentor-section">
                         <legend class="slider-label">Qual é o seu prazo ideal?</legend>
                         <div id="deadlineGroup" class="quick-replies">
@@ -54,7 +59,7 @@ class EFGoals extends HTMLElement {
                         </div>
                     </fieldset>
                     <fieldset class="mentor-section">
-                        <legend class="slider-label">Frequência ideal de contato</legend>
+                        <legend class="slider-label">Frequência ideal de estudo</legend>
                         <div id="frequencyGroup" class="quick-replies">
                             ${this.optionButton("3x", "3x por semana")}
                             ${this.optionButton("5x", "5x por semana")}
@@ -62,8 +67,8 @@ class EFGoals extends HTMLElement {
                         </div>
                     </fieldset>
                     <fieldset class="mentor-section">
-                        <legend class="slider-label">Assuntos do seu interesse</legend>
-                        <p class="small-text goals-helper">Selecione os temas que você gostaria de usar para aprender o idioma.</p>
+                        <legend class="slider-label">Assuntos do seu interesse para esta língua</legend>
+                        <p class="small-text goals-helper">Eles serão usados em exemplos, exercícios, revisões e conversas com o Mentor.</p>
                         <div id="interestsGroup" class="tag-list"></div>
                         <div class="tag-editor">
                             <label class="sr-only" for="customTagInput">Adicionar outro assunto</label>
@@ -78,6 +83,8 @@ class EFGoals extends HTMLElement {
             </div>
         `;
 
+        this.querySelector("#goalDescription").value = state.profile.goalDescription || "";
+        this.querySelector("#useCase").value = state.profile.useCase || "";
         this.renderInterests();
         this.bindEvents();
     }
@@ -99,8 +106,7 @@ class EFGoals extends HTMLElement {
             button.addEventListener("click", () => {
                 if (this.selectedInterests.has(interest)) this.selectedInterests.delete(interest);
                 else this.selectedInterests.add(interest);
-                button.classList.toggle("selected", this.selectedInterests.has(interest));
-                button.setAttribute("aria-pressed", String(this.selectedInterests.has(interest)));
+                this.renderInterests();
             });
             container.appendChild(button);
         });
@@ -109,7 +115,6 @@ class EFGoals extends HTMLElement {
     bindEvents() {
         this.bindSingleChoice("#deadlineGroup", "selectedDeadline");
         this.bindSingleChoice("#frequencyGroup", "selectedFrequency");
-
         const input = this.querySelector("#customTagInput");
         const add = () => {
             const value = input.value.trim().replace(/\s+/g, " ");
@@ -123,7 +128,6 @@ class EFGoals extends HTMLElement {
             input.value = "";
             this.renderInterests();
         };
-
         this.querySelector("#addTagButton").addEventListener("click", add);
         input.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
@@ -152,11 +156,17 @@ class EFGoals extends HTMLElement {
     }
 
     saveAndContinue() {
+        const goalDescription = this.querySelector("#goalDescription").value.trim();
+        const useCase = this.querySelector("#useCase").value.trim();
+        if (goalDescription.length < 12) return this.showToast("Explique um pouco melhor por que quer aprender esta língua.");
+        if (useCase.length < 8) return this.showToast("Informe ao menos uma situação real de uso.");
         if (!this.selectedDeadline) return this.showToast("Selecione um prazo ideal.");
         if (!this.selectedFrequency) return this.showToast("Escolha a frequência de estudos.");
         if (this.selectedInterests.size === 0) return this.showToast("Selecione ao menos um assunto.");
 
         state.updateProfile({
+            goalDescription,
+            useCase,
             goalDetails: {
                 deadline: this.selectedDeadline,
                 frequency: this.selectedFrequency,

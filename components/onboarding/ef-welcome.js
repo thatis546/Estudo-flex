@@ -18,9 +18,16 @@ class EFWelcome extends HTMLElement {
         this.innerHTML = `
             <article class="welcome-card">
                 <div class="brand-orbit" aria-hidden="true">
-                    <span class="orbit-dot"></span>
+                    <span class="brand-orbit--inner">
+                        <span class="orbit-satellite orbit-satellite--br">🇧🇷</span>
+                    </span>
+                    <span class="brand-orbit--outer">
+                        <span class="orbit-satellite orbit-satellite--language">💬</span>
+                        <span class="orbit-satellite orbit-satellite--travel">✈️</span>
+                    </span>
                     <span class="brand-globe">🌍</span>
                 </div>
+                <p class="welcome-origin">Do Brasil para o mundo</p>
                 <h1>Bem-vindo ao Estudo Flex Languages</h1>
                 <p>${hasProgress
                     ? "Sua configuração foi salva. Continue de onde parou."
