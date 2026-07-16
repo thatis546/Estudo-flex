@@ -11,9 +11,10 @@ class EFNavbar extends HTMLElement {
         this.innerHTML = `
             <nav class="ef-navbar" aria-label="Navegação principal">
                 <button type="button" class="ef-navbar__item" data-route="home"><span aria-hidden="true">🏠</span><small>Home</small></button>
-                <button type="button" class="ef-navbar__item" data-route="passport"><span aria-hidden="true">🛂</span><small>Passaporte</small></button>
-                <button type="button" class="ef-navbar__item" data-route="speaking"><span aria-hidden="true">🎤</span><small>Oratória</small></button>
+                <button type="button" class="ef-navbar__item" data-route="mentor"><span aria-hidden="true">💬</span><small>Mentor</small></button>
+                <button type="button" class="ef-navbar__item" data-route="speaking"><span aria-hidden="true">🎙️</span><small>Oratória</small></button>
                 <button type="button" class="ef-navbar__item" data-route="professional"><span aria-hidden="true">💼</span><small>Profissional</small></button>
+                <button type="button" class="ef-navbar__item" data-route="passport"><span aria-hidden="true">🛂</span><small>Passaporte</small></button>
             </nav>
         `;
         this.addEventListener("click", this.handleClick);
