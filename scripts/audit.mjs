@@ -123,7 +123,18 @@ function collectActiveModules(file) {
         collectActiveModules(resolve(dirname(absolute), match[1] || match[2]));
     }
 }
+collectActiveModules(join(root, "core", "bootstrap.js"));
 collectActiveModules(join(root, "core", "app.js"));
+
+// components/register.js usa um manifesto de imports dinâmicos para impedir
+// que um único módulo ausente derrube toda a aplicação.
+const componentRegisterPath = join(root, "components", "register.js");
+const componentRegisterSource = sourceOf(componentRegisterPath);
+for (const match of componentRegisterSource.matchAll(/path:\s*["'](\.\/[^"']+\.js)["']/g)) {
+    const target = resolve(dirname(componentRegisterPath), match[1]);
+    checkExists(target, `Componente declarado no registro não existe: ${match[1]}`);
+    collectActiveModules(target);
+}
 
 // Verifica IDs duplicados no conjunto de componentes ativos.
 const activeModuleList = [...activeModules];
@@ -196,6 +207,8 @@ if (manifest.version !== version) errors.push(`Versão divergente no manifest: $
 if (backendPackage.version !== version) errors.push(`Versão divergente no backend/package.json: ${backendPackage.version} ≠ ${version}`);
 const configSource = sourceOf(join(root, "core", "config.js"));
 if (!configSource.includes(`version: "${version}"`)) errors.push("core/config.js não usa a versão do pacote.");
+if (!indexSource.includes(`./core/bootstrap.js?v=${version}`)) errors.push("index.html não carrega o bootstrap versionado.");
+if (!indexSource.includes(`./css/main.css?v=${version}`)) errors.push("index.html não carrega o CSS versionado.");
 if (!swSource.includes(`estudoflex-v${version}`)) errors.push("Service Worker não usa a versão atual no nome do cache.");
 const backendServerSource = sourceOf(join(root, "backend", "src", "server.js"));
 if (!backendServerSource.includes(`version: "${version}"`)) errors.push("Endpoint de saúde do backend não informa a versão atual.");
