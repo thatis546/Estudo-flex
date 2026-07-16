@@ -92,3 +92,17 @@ test("validação rejeita texto contraditório entre ação e idioma", () => {
     const result = validateAchievementConsistency({ userName: "Ana", languageCode: "en", title: "Pediu uma pizza em italiano", description: "Conquista", sourceEvidence: "feito", requiresEvidence: true });
     assert.equal(result.valid, false);
 });
+
+test("migração de conquistas antigas malformadas não impede a inicialização", () => {
+    state.initialize({
+        profile: {
+            xp: 20,
+            achievements: ["first_steps", null, 42, { id: "valid", xp: 10 }],
+            xpLedger: [null, "invalid", { id: "legacy-entry", amount: 20 }]
+        }
+    });
+
+    assert.doesNotThrow(() => synchronizeAchievementRewards());
+    assert.equal(state.profile.achievements.every((item) => item && typeof item === "object"), true);
+    assert.equal(state.profile.xpLedger.every((item) => item && typeof item === "object"), true);
+});
