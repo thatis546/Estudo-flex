@@ -1,18 +1,11 @@
 import { state } from "../core/state.js";
 import { storage } from "../core/storage.js";
+import { getCurrentLanguageRecord } from "./language-profile.service.js";
 
 class MentorService {
-    initialize() {
-        return state.profile;
-    }
-
-    getProfile() {
-        return state.profile;
-    }
-
-    get(key) {
-        return state.profile?.[key];
-    }
+    initialize() { return state.profile; }
+    getProfile() { return state.profile; }
+    get(key) { return state.profile?.[key]; }
 
     set(key, value) {
         if (!key) return false;
@@ -20,37 +13,41 @@ class MentorService {
         return storage.save();
     }
 
-    // Mantém compatibilidade com chamadas antigas que passavam profile como primeiro argumento.
-    upsert(_profile, key, value) {
-        return this.set(key, value);
-    }
+    upsert(_profile, key, value) { return this.set(key, value); }
 
     getSummary() {
         const profile = state.profile;
+        const language = getCurrentLanguageRecord();
         return {
             name: profile.name,
-            language: profile.language,
-            level: profile.level,
-            levelTag: profile.levelTag,
-            goalDetails: profile.goalDetails,
-            learningStyle: profile.learningStyle,
+            languageCode: language?.code || "",
+            languageName: language?.name || "",
+            journeyId: language?.journeyId || "",
+            journeyLabel: language?.journeyLabel || "",
+            goal: language?.learningProfile?.goal || "",
+            goalDescription: language?.learningProfile?.goalDescription || "",
+            useCase: language?.learningProfile?.useCase || "",
+            interests: language?.learningProfile?.goalDetails?.interests || [],
+            learningStyle: language?.learningProfile?.learningStyle || profile.learningStyle,
             supportMode: profile.supportMode,
-            professionalTrack: profile.professional?.track || profile.professionalTrack
+            professionalTrack: language?.professional?.selectedTrack || "",
+            memories: profile.aiMemory?.enabled ? profile.aiMemory.items : []
         };
     }
 
-    clear() {
+    clearPreferences() {
         state.updateMentor({
             personality: "guided",
             mood: "friendly",
             speed: "normal",
-            correctionStyle: "immediate",
+            correctionStyle: "final",
             humor: 0.8,
-            sarcasm: 0.1,
-            notes: []
+            sarcasm: 0.1
         });
         return storage.save();
     }
+
+    clear() { return this.clearPreferences(); }
 }
 
 export const mentor = new MentorService();
