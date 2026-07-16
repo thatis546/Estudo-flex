@@ -1,0 +1,1 @@
+class EFLoadingDialog extends HTMLElement{connectedCallback(){this.innerHTML=`<dialog><p>Carregando...</p></dialog>`}};customElements.define('ef-loading-dialog',EFLoadingDialog);

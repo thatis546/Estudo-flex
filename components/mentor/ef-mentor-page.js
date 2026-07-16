@@ -1,0 +1,1 @@
+class EFMentorPage extends HTMLElement{connectedCallback(){this.innerHTML=`<section><h2>Mentor</h2><ef-chat></ef-chat></section>`}};customElements.define('ef-mentor-page',EFMentorPage);

@@ -1,0 +1,1 @@
+class EFFooter extends HTMLElement{connectedCallback(){this.innerHTML=`<footer>© Estudo Flex</footer>`}};customElements.define('ef-footer',EFFooter);

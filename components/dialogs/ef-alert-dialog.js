@@ -1,0 +1,1 @@
+class EFAlertDialog extends HTMLElement{connectedCallback(){this.innerHTML=`<dialog><p>Aviso</p><button>OK</button></dialog>`}};customElements.define('ef-alert-dialog',EFAlertDialog);

@@ -1,0 +1,1 @@
+class EFTheme extends HTMLElement{connectedCallback(){this.innerHTML=`<div><h3>Tema</h3><select><option>Claro</option><option>Escuro</option><option>Sistema</option></select></div>`}};customElements.define('ef-theme',EFTheme);

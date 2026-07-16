@@ -1,0 +1,1 @@
+class EFConfirmDialog extends HTMLElement{connectedCallback(){this.innerHTML=`<dialog><p>Tem certeza?</p><button>Cancelar</button><button>Confirmar</button></dialog>`}};customElements.define('ef-confirm-dialog',EFConfirmDialog);

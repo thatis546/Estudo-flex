@@ -1,0 +1,1 @@
+class EFTopic extends HTMLElement{connectedCallback(){this.innerHTML=`<article>Tópico</article>`}};customElements.define('ef-topic',EFTopic);

@@ -1,0 +1,1 @@
+class EFAccount extends HTMLElement{connectedCallback(){this.innerHTML=`<div>Conta • Exportar • Excluir</div>`}};customElements.define('ef-account',EFAccount);

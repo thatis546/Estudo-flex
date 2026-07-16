@@ -1,0 +1,1 @@
+class EFInput extends HTMLElement{connectedCallback(){this.innerHTML=`<input placeholder='Digite aqui...'>`}};customElements.define('ef-input',EFInput);

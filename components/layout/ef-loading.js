@@ -1,0 +1,1 @@
+class EFLoading extends HTMLElement{connectedCallback(){this.innerHTML=`<div>Carregando...</div>`}};customElements.define('ef-loading',EFLoading);

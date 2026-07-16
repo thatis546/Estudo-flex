@@ -1,0 +1,1 @@
+class EFLanguageSettings extends HTMLElement{connectedCallback(){this.innerHTML=`<div><h3>Idioma do aplicativo</h3><button>Português</button></div>`}};customElements.define('ef-language-settings',EFLanguageSettings);

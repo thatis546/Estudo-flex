@@ -1,0 +1,1 @@
+class EFAccountSettings extends HTMLElement{connectedCallback(){this.innerHTML=`<div><button>Exportar dados</button><button>Excluir conta</button></div>`}};customElements.define('ef-account-settings',EFAccountSettings);

@@ -1,0 +1,1 @@
+class EFChat extends HTMLElement{connectedCallback(){this.innerHTML=`<div><b>Sophie</b><p>Bonjour! Vamos estudar?</p></div>`}};customElements.define('ef-chat',EFChat);

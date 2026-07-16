@@ -1,0 +1,1 @@
+class EFMessage extends HTMLElement{connectedCallback(){this.innerHTML=`<p>Mensagem...</p>`}};customElements.define('ef-message',EFMessage);

@@ -1,0 +1,1 @@
+class EFGrammarList extends HTMLElement{connectedCallback(){this.innerHTML=`<ul><li>Cumprimentos</li><li>Pronomes</li><li>Verbo ser</li></ul>`}};customElements.define('ef-grammar-list',EFGrammarList);

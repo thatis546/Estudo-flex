@@ -1,0 +1,1 @@
+class EFRecord extends HTMLElement{connectedCallback(){this.innerHTML=`<button>🎙 Gravar (futuro)</button>`}};customElements.define('ef-record',EFRecord);

@@ -1,0 +1,1 @@
+class EFPlan extends HTMLElement{connectedCallback(){this.innerHTML=`<div>Plano do dia: Conversar 5 min.</div>`}};customElements.define('ef-plan',EFPlan);

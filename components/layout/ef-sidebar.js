@@ -1,0 +1,1 @@
+class EFSidebar extends HTMLElement{connectedCallback(){this.innerHTML=`<aside>Menu futuro</aside>`}};customElements.define('ef-sidebar',EFSidebar);

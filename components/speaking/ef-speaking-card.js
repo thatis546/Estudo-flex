@@ -1,0 +1,1 @@
+class EFSpeakingCard extends HTMLElement{connectedCallback(){this.innerHTML=`<div>Shadowing • Pronúncia • Conversação</div>`}};customElements.define('ef-speaking-card',EFSpeakingCard);

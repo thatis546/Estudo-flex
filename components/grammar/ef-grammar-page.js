@@ -1,0 +1,1 @@
+class EFGrammarPage extends HTMLElement{connectedCallback(){this.innerHTML=`<section><h2>📖 Gramática</h2><ef-grammar-list></ef-grammar-list></section>`}};customElements.define('ef-grammar-page',EFGrammarPage);

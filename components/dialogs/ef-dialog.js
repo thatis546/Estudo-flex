@@ -1,0 +1,1 @@
+class EFDialog extends HTMLElement{connectedCallback(){this.innerHTML=`<dialog><slot></slot></dialog>`}};customElements.define('ef-dialog',EFDialog);

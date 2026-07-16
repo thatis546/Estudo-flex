@@ -1,0 +1,1 @@
+class EFSettingsPage extends HTMLElement{connectedCallback(){this.innerHTML=`<section><h2>⚙ Configurações</h2><ef-theme></ef-theme><ef-language-settings></ef-language-settings><ef-account-settings></ef-account-settings></section>`}};customElements.define('ef-settings-page',EFSettingsPage);

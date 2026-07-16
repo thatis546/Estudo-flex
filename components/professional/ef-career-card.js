@@ -1,0 +1,1 @@
+class EFCareerCard extends HTMLElement{connectedCallback(){this.innerHTML=`<article>Trilha Profissional</article>`}};customElements.define('ef-career-card',EFCareerCard);
