@@ -1,1111 +1,361 @@
 import { state } from "../../core/state.js";
+import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
+import { COMMUNICATION_MODULES, getCommunicationModule } from "../../data/communication-modules.js";
 import { audioRecorder } from "../../services/audio-recorder.service.js";
-import { router } from "../../core/router.js";
+import { speechRecognition } from "../../services/speech-recognition.service.js";
+import { analyzeCommunication, saveCommunicationReport, transcribeCommunicationAudio } from "../../services/communication-lab.service.js";
+import { isLanguageReady } from "../../services/language-profile.service.js";
 
-import {
-    registerAchievementEvent,
-    checkMetricAchievements
-} from "../../services/achievement-service.js";
+const LOCALES = { en: "en-GB", fr: "fr-FR", de: "de-DE", it: "it-IT", es: "es-ES" };
+const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
 
-const MINIMUM_VALID_SESSION_SECONDS = 30;
-
-function escapeHTML(value) {
-    return String(value ?? "").replace(
-        /[&<>"']/g,
-        (character) => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        }[character])
-    );
-}
-
-export class EFSpeakingPage extends HTMLElement {
+class EFSpeakingPage extends HTMLElement {
     constructor() {
         super();
-
-        this.session = this.createEmptySession();
-        this.timerInterval = null;
-        this.previewUrl = "";
-        this.isBusy = false;
-        this.startRequestId = 0;
-        this.isPageActive = false;
-
-        this.handleToggleConversation =
-            this.handleToggleConversation.bind(this);
+        this.selectedModule = "pronunciation";
+        this.recording = false;
+        this.startedAt = 0;
+        this.timer = null;
+        this.transcript = "";
+        this.interim = "";
+        this.audioBlob = null;
+        this.audioUrl = "";
+        this.audioContext = null;
+        this.analyser = null;
+        this.animationFrame = null;
+        this.volumeSamples = [];
+        this.sessionToken = 0;
         this.handleRouteChange = this.handleRouteChange.bind(this);
-        this.handleLanguageChange = this.handleLanguageChange.bind(this);
-        this.handleStateChange = this.handleStateChange.bind(this);
     }
 
     connectedCallback() {
-        this.render();
-        this.cacheElements();
-        this.bindEvents();
-        this.updateInterface("idle");
-        this.isPageActive = router.getCurrentPage() === "speaking";
         window.addEventListener("routechange", this.handleRouteChange);
-        window.addEventListener("language-changed", this.handleLanguageChange);
-        window.addEventListener("state-updated", this.handleStateChange);
     }
 
     disconnectedCallback() {
-        this.stopTimer();
-        this.revokePreviewUrl();
-
-        this.micButton?.removeEventListener(
-            "click",
-            this.handleToggleConversation
-        );
-
         window.removeEventListener("routechange", this.handleRouteChange);
-        window.removeEventListener("language-changed", this.handleLanguageChange);
-        window.removeEventListener("state-updated", this.handleStateChange);
-        this.startRequestId += 1;
-        audioRecorder.cancel().catch(() => {});
+        this.cancelSession();
     }
 
-
-
-    handleLanguageChange() {
-        if (this.session.isRecording || this.isBusy) return;
-        this.revokePreviewUrl();
+    onRouteEnter() {
+        const record = state.getLanguage(state.currentLanguage);
+        if (!record) {
+            router.navigate("languages", "replace");
+            return;
+        }
+        if (!isLanguageReady(record)) {
+            router.navigate("language-setup", "replace");
+            return;
+        }
+        this.record = record;
+        this.language = EF_LANGUAGES[record.code] || record;
+        this.selectedModule = record.communicationLab?.selectedModule || "pronunciation";
         this.render();
-        this.cacheElements();
-        this.bindEvents();
-        this.updateInterface("idle");
     }
 
-    handleStateChange() {
-        if (this.session.isRecording || this.isBusy) return;
-        const languageCode = this.resolveCurrentLanguage().code;
-        const renderedLanguage = this.dataset.renderedLanguage || "";
-        if (languageCode !== renderedLanguage) this.handleLanguageChange();
+    handleRouteChange(event) {
+        if (event.detail?.page !== "speaking") this.cancelSession();
     }
 
-    async handleRouteChange(event) {
-        this.isPageActive = event.detail?.page === "speaking";
-        if (this.isPageActive) return;
+    render() {
+        const module = getCommunicationModule(this.selectedModule);
+        const reports = this.record?.communicationLab?.reports || [];
+        const latest = reports[0];
+        this.innerHTML = `
+            <section class="communication-lab-page" aria-labelledby="communicationLabTitle">
+                <header class="screen-header communication-lab-header">
+                    <div>
+                        <p class="eyebrow">COMMUNICATION LAB</p>
+                        <h1 id="communicationLabTitle">Oratória e análise técnica</h1>
+                        <p>Esta área não é uma conversa com o Mentor. Ela guia módulos de pronúncia, voz, clareza, ritmo, muletas, repetição e comunicação profissional.</p>
+                    </div>
+                    <span class="communication-language-badge">${escapeHTML(this.language.flag || "🌍")} ${escapeHTML(this.language.name)}</span>
+                </header>
 
-        this.startRequestId += 1;
-        if (!this.session.isRecording && !this.isBusy && !audioRecorder.isRecording()) return;
+                <div class="communication-module-grid" role="list" aria-label="Módulos de oratória">
+                    ${COMMUNICATION_MODULES.map((item) => `
+                        <button type="button" class="communication-module-card ${item.id === this.selectedModule ? "is-selected" : ""}" data-module="${item.id}" aria-pressed="${item.id === this.selectedModule}">
+                            <span aria-hidden="true">${item.icon}</span><strong>${escapeHTML(item.title)}</strong><small>${escapeHTML(item.description)}</small>
+                        </button>
+                    `).join("")}
+                </div>
 
-        await audioRecorder.cancel().catch(() => {});
-        this.stopTimer();
-        this.isBusy = false;
-        this.session = this.createEmptySession();
-        this.updateInterface("idle", "Gravação cancelada ao sair da página.");
+                <article class="card communication-practice-card">
+                    <div class="communication-practice-heading">
+                        <span class="communication-practice-icon" aria-hidden="true">${module.icon}</span>
+                        <div><p class="eyebrow">EXERCÍCIO GUIADO</p><h2>${escapeHTML(module.title)}</h2><p>${escapeHTML(module.prompt)}</p></div>
+                    </div>
+                    <div class="communication-metrics-preview">${module.metrics.map((metric) => `<span>${escapeHTML(metric)}</span>`).join("")}</div>
+
+                    <div class="communication-recorder" data-state="idle">
+                        <div class="communication-meter" aria-label="Intensidade do microfone"><span id="communicationMeter"></span></div>
+                        <p id="communicationTimer" class="communication-timer">00:00</p>
+                        <p id="communicationStatus" class="communication-status" role="status">Pronto para gravar. Fale por pelo menos 20 segundos para receber um relatório útil.</p>
+                        <div class="actions">
+                            <button id="startCommunication" type="button" class="primary">Iniciar gravação</button>
+                            <button id="stopCommunication" type="button" class="danger" disabled>Encerrar e analisar</button>
+                            <button id="cancelCommunication" type="button" class="secondary" disabled>Cancelar</button>
+                        </div>
+                    </div>
+
+                    <div class="communication-transcript-panel">
+                        <div class="communication-panel-heading"><h3>Transcrição</h3><small>Você poderá corrigir o texto antes da análise.</small></div>
+                        <textarea id="communicationTranscript" class="text-input" rows="7" placeholder="Sua fala aparecerá aqui durante ou após a gravação.">${escapeHTML(this.transcript)}</textarea>
+                        <p id="communicationInterim" class="form-help">${escapeHTML(this.interim)}</p>
+                    </div>
+                    <audio id="communicationAudio" controls ${this.audioUrl ? `src="${escapeHTML(this.audioUrl)}"` : "hidden"}></audio>
+                    <button id="reanalyzeCommunication" type="button" class="secondary full" ${this.transcript ? "" : "disabled"}>Recalcular relatório com a transcrição corrigida</button>
+                </article>
+
+                <section id="communicationReportArea">${latest ? this.reportMarkup(latest, "Último relatório salvo") : `<div class="passport-empty-state"><strong>Nenhum relatório ainda</strong><p>Conclua uma gravação para iniciar seu histórico de oratória.</p></div>`}</section>
+            </section>
+        `;
+
+        this.querySelectorAll("[data-module]").forEach((button) => button.addEventListener("click", () => this.selectModule(button.dataset.module)));
+        this.querySelector("#startCommunication")?.addEventListener("click", () => this.startRecording());
+        this.querySelector("#stopCommunication")?.addEventListener("click", () => this.stopRecording());
+        this.querySelector("#cancelCommunication")?.addEventListener("click", () => this.cancelSession());
+        this.querySelector("#communicationTranscript")?.addEventListener("input", (event) => { this.transcript = event.target.value; this.updateReanalyzeButton(); });
+        this.querySelector("#reanalyzeCommunication")?.addEventListener("click", () => this.analyzeAndSave({ reuseDuration: true }));
     }
 
-    createEmptySession() {
-        return {
-            startedAt: null,
-            pronunciationErrors: 0,
-            isRecording: false,
-            elapsedSeconds: 0,
-            audioBlob: null,
-            mimeType: "",
-            sizeBytes: 0
-        };
+    selectModule(moduleId) {
+        if (this.recording) return;
+        this.selectedModule = getCommunicationModule(moduleId).id;
+        this.record.communicationLab.selectedModule = this.selectedModule;
+        storage.save();
+        this.transcript = "";
+        this.interim = "";
+        this.clearAudioPreview();
+        this.render();
     }
 
-    cacheElements() {
-        this.waveform = this.querySelector(
-            ".speaking-waveform-container"
-        );
-
-        this.controlPanel = this.querySelector(
-            ".speaking-control-panel"
-        );
-
-        this.micButton = this.querySelector(
-            ".mic-button"
-        );
-
-        this.micIcon = this.querySelector(
-            '[data-field="mic-icon"]'
-        );
-
-        this.statusElement = this.querySelector(
-            ".speaking-status-text"
-        );
-
-        this.timerElement = this.querySelector(
-            '[data-field="conversation-timer"]'
-        );
-
-        this.errorElement = this.querySelector(
-            '[data-field="pronunciation-errors"]'
-        );
-
-        this.previewWrapper = this.querySelector(
-            ".speaking-recording-preview"
-        );
-
-        this.audioPreview = this.querySelector(
-            '[data-field="audio-preview"]'
-        );
-
-        this.audioMetadata = this.querySelector(
-            '[data-field="audio-metadata"]'
-        );
-    }
-
-    bindEvents() {
-        this.micButton?.addEventListener(
-            "click",
-            this.handleToggleConversation
-        );
-    }
-
-    async handleToggleConversation() {
-        if (this.isBusy) {
-            return;
-        }
-
-        if (this.session.isRecording) {
-            await this.endConversation();
-            return;
-        }
-
-        await this.startConversation();
-    }
-
-    async startConversation() {
-        if (this.session.isRecording || this.isBusy) {
-            return;
-        }
-
-        const language = this.resolveCurrentLanguage();
-
-        if (!language.code) {
-            this.updateInterface(
-                "error",
-                "Selecione um idioma antes de iniciar."
-            );
-
-            return;
-        }
-
-        if (!audioRecorder.isSupported()) {
-            this.updateInterface(
-                "error",
-                "Seu navegador não oferece gravação de áudio."
-            );
-
-            return;
-        }
-
-        this.isBusy = true;
-        const requestId = ++this.startRequestId;
-        this.updateInterface(
-            "requesting",
-            "Aguardando permissão do microfone…"
-        );
-
+    async startRecording() {
+        if (this.recording) return;
+        const token = ++this.sessionToken;
+        this.setStatus("Solicitando acesso ao microfone...");
         try {
-            const recorderInfo =
-                await audioRecorder.start();
-
-            if (requestId !== this.startRequestId || !this.isPageActive) {
-                await audioRecorder.cancel().catch(() => {});
+            const started = await audioRecorder.start();
+            if (token !== this.sessionToken || router.getCurrentPage() !== "speaking") {
+                await audioRecorder.cancel();
                 return;
             }
-
-            this.revokePreviewUrl();
-            this.hideAudioPreview();
-
-            this.session = {
-                ...this.createEmptySession(),
-                startedAt: Date.now(),
-                isRecording: true,
-                mimeType: recorderInfo.mimeType
-            };
-
+            this.recording = true;
+            this.startedAt = Date.now();
+            this.transcript = "";
+            this.interim = "";
+            this.volumeSamples = [];
             this.startTimer();
-            this.updateErrorCounter();
-            this.updateInterface("recording");
+            this.startMeter(started.stream);
+            const recognitionStarted = speechRecognition.start({
+                lang: LOCALES[this.record.code] || this.record.code,
+                onUpdate: ({ final, interim }) => {
+                    this.transcript = final;
+                    this.interim = interim;
+                    this.updateTranscriptFields();
+                },
+                onError: () => this.setStatus("A transcrição ao vivo foi interrompida; o áudio será enviado para transcrição ao final.")
+            });
+            this.updateRecorderControls(true);
+            this.setStatus(recognitionStarted ? "Gravando e transcrevendo ao vivo..." : "Gravando. A transcrição será processada ao final.");
         } catch (error) {
-            console.error(
-                "Erro ao iniciar gravação:",
-                error
-            );
-
-            this.updateInterface(
-                "error",
-                this.getMicrophoneErrorMessage(error)
-            );
-        } finally {
-            this.isBusy = false;
-            this.syncButtonDisabledState();
+            this.setStatus(error.message || "Não foi possível acessar o microfone.", true);
+            this.updateRecorderControls(false);
         }
     }
 
-    async endConversation() {
-        if (
-            !this.session.isRecording ||
-            !Number.isFinite(this.session.startedAt) ||
-            this.isBusy
-        ) {
-            return null;
-        }
-
-        this.isBusy = true;
-        this.session.isRecording = false;
+    async stopRecording() {
+        if (!this.recording) return;
+        const token = this.sessionToken;
+        const durationSeconds = Math.max(1, Math.round((Date.now() - this.startedAt) / 1000));
+        this.recording = false;
         this.stopTimer();
-        this.updateInterface(
-            "processing",
-            "Finalizando a gravação…"
-        );
-
+        this.stopMeter();
+        this.updateRecorderControls(false, true);
+        this.setStatus("Finalizando áudio e transcrição...");
         try {
-            const audioBlob =
-                await audioRecorder.stop();
-
-            if (!audioBlob || audioBlob.size === 0) {
-                throw new Error("Nenhum áudio foi capturado.");
+            const [audioBlob, browserTranscript] = await Promise.all([audioRecorder.stop(), speechRecognition.stop()]);
+            if (token !== this.sessionToken) return;
+            if (!audioBlob || audioBlob.size === 0) throw new Error("Nenhum áudio utilizável foi capturado.");
+            this.audioBlob = audioBlob;
+            this.transcript = String(browserTranscript || this.transcript || "").trim();
+            this.setAudioPreview(audioBlob);
+            if (!this.transcript) {
+                this.setStatus("Enviando o áudio para transcrição...");
+                this.transcript = await transcribeCommunicationAudio(audioBlob, this.record.code);
             }
-
-            const elapsedSeconds = Math.max(
-                0,
-                Math.floor(
-                    (
-                        Date.now() -
-                        this.session.startedAt
-                    ) / 1000
-                )
-            );
-
-            this.session.elapsedSeconds =
-                elapsedSeconds;
-
-            this.session.audioBlob = audioBlob;
-            this.session.mimeType =
-                audioBlob.type ||
-                this.session.mimeType;
-
-            this.session.sizeBytes =
-                audioBlob.size;
-
-            this.showAudioPreview(audioBlob);
-
-            const result =
-                this.processCompletedConversation(
-                    elapsedSeconds,
-                    audioBlob
-                );
-
-            this.dispatchAudioReadyEvent(
-                audioBlob,
-                result
-            );
-
-            this.updateInterface(
-                "finished",
-                this.createFinishedMessage(result)
-            );
-
-            return result;
+            if (!this.transcript) throw new Error("O áudio foi gravado, mas não foi possível gerar uma transcrição. Você pode digitar ou corrigir o texto manualmente.");
+            this.updateTranscriptFields();
+            await this.analyzeAndSave({ durationSeconds });
         } catch (error) {
-            console.error(
-                "Erro ao finalizar gravação:",
-                error
-            );
-
-            this.updateInterface(
-                "error",
-                "Não foi possível salvar esta gravação. Tente novamente."
-            );
-
-            return null;
+            this.setStatus(error.message || "Não foi possível concluir a análise.", true);
+            this.updateTranscriptFields();
+            this.updateReanalyzeButton();
         } finally {
-            this.isBusy = false;
-            this.syncButtonDisabledState();
+            this.updateRecorderControls(false);
         }
     }
 
-    processCompletedConversation(
-        elapsedSeconds,
-        audioBlob
-    ) {
-        const language =
-            this.resolveCurrentLanguage();
-
-        if (!language.code) {
-            return {
-                valid: false,
-                elapsedSeconds,
-                totalMinutes: 0,
-                unlockedAchievements: [],
-                audioBlob
-            };
-        }
-
-        if (
-            elapsedSeconds <
-            MINIMUM_VALID_SESSION_SECONDS
-        ) {
-            return {
-                valid: false,
-                elapsedSeconds,
-                totalMinutes:
-                    this.getConversationMinutes(
-                        language.code
-                    ),
-                unlockedAchievements: [],
-                audioBlob
-            };
-        }
-
-        const languageProgress =
-            this.ensureLanguageProgress(language);
-
-        languageProgress.stats.conversationSeconds +=
-            elapsedSeconds;
-
-        languageProgress.stats.conversationsCompleted +=
-            1;
-
-        languageProgress.stats.pronunciationErrors +=
-            this.session.pronunciationErrors;
-
-        languageProgress.stats.recordedAudioBytes +=
-            audioBlob.size;
-
-        const totalMinutes = Math.floor(
-            languageProgress.stats.conversationSeconds /
-            60
-        );
-
-        const unlockedAchievements = [
-            ...registerAchievementEvent(
-                "conversation-completed",
-                {
-                    language,
-                    metadata: {
-                        elapsedSeconds,
-                        audioSizeBytes: audioBlob.size,
-                        mimeType: audioBlob.type
-                    }
-                }
-            )
-        ];
-
-        if (this.session.pronunciationErrors > 0) {
-            unlockedAchievements.push(
-                ...registerAchievementEvent(
-                    "conversation-completed-with-errors",
-                    {
-                        language,
-                        metadata: {
-                            elapsedSeconds,
-                            pronunciationErrors:
-                                this.session
-                                    .pronunciationErrors
-                        }
-                    }
-                )
-            );
-        }
-
-        unlockedAchievements.push(
-            ...checkMetricAchievements(
-                "conversationMinutes",
-                totalMinutes,
-                {
-                    language,
-                    metadata: {
-                        totalConversationMinutes:
-                            totalMinutes
-                    }
-                }
-            )
-        );
-
-        this.saveProgress();
-
-        return {
-            valid: true,
-            elapsedSeconds,
-            totalMinutes,
-            pronunciationErrors:
-                this.session.pronunciationErrors,
-            unlockedAchievements,
-            audioBlob
-        };
-    }
-
-    dispatchAudioReadyEvent(audioBlob, result) {
-        window.dispatchEvent(
-            new CustomEvent(
-                "speaking-audio-ready",
-                {
-                    detail: {
-                        audioBlob,
-                        language:
-                            this.resolveCurrentLanguage(),
-                        elapsedSeconds:
-                            this.session.elapsedSeconds,
-                        validSession:
-                            Boolean(result?.valid),
-                        mimeType:
-                            audioBlob.type,
-                        sizeBytes:
-                            audioBlob.size
-                    }
-                }
-            )
-        );
-    }
-
-    onPronunciationError(errorDetails = {}) {
-        if (!this.session.isRecording) {
+    async analyzeAndSave({ durationSeconds = 0, reuseDuration = false } = {}) {
+        const transcriptField = this.querySelector("#communicationTranscript");
+        this.transcript = String(transcriptField?.value || this.transcript || "").trim();
+        if (!this.transcript) {
+            this.setStatus("Insira ou obtenha uma transcrição antes de analisar.", true);
             return;
         }
-
-        this.session.pronunciationErrors += 1;
-        this.updateErrorCounter();
-
-        window.dispatchEvent(
-            new CustomEvent(
-                "speaking-pronunciation-error",
-                {
-                    detail: {
-                        count:
-                            this.session
-                                .pronunciationErrors,
-                        ...errorDetails
-                    }
-                }
-            )
-        );
+        const latest = this.record.communicationLab?.reports?.[0];
+        const duration = reuseDuration ? Number(latest?.durationSeconds) || Math.max(20, Math.round((Date.now() - this.startedAt) / 1000)) : durationSeconds;
+        const report = analyzeCommunication({
+            transcript: this.transcript,
+            durationSeconds: duration,
+            languageCode: this.record.code,
+            moduleId: this.selectedModule,
+            audioMetrics: this.getAudioMetrics()
+        });
+        const sessionId = globalThis.crypto?.randomUUID?.() || `communication-${Date.now()}`;
+        saveCommunicationReport(report, { languageCode: this.record.code, sessionId });
+        const area = this.querySelector("#communicationReportArea");
+        if (area) area.innerHTML = this.reportMarkup(report, "Relatório desta sessão");
+        this.setStatus("Relatório concluído e salvo no Perfil Vivo.");
+        this.updateReanalyzeButton();
     }
 
-    resolveCurrentLanguage() {
-        const current = state.currentLanguage;
-
-        const rawCode =
-            typeof current === "string"
-                ? current
-                : current?.code ||
-                  current?.id ||
-                  "";
-
-        const code = String(rawCode)
-            .trim()
-            .toLowerCase();
-
-        if (!code) {
-            return {
-                code: "",
-                name: "Idioma",
-                flag: "🌍",
-                mentor: "Mentor de conversação"
-            };
-        }
-
-        const languages = Array.isArray(
-            state.languages
-        )
-            ? state.languages
-            : [];
-
-        const progress = languages.find(
-            (language) =>
-                String(
-                    language.code ||
-                    language.id ||
-                    ""
-                )
-                    .trim()
-                    .toLowerCase() === code
-        );
-
-        const configuration =
-            EF_LANGUAGES[code] || {};
-
-        return {
-            code,
-            name:
-                progress?.name ||
-                progress?.label ||
-                configuration.name ||
-                code.toUpperCase(),
-            flag:
-                progress?.flag ||
-                configuration.flag ||
-                "🌍",
-            mentor:
-                progress?.mentor ||
-                configuration.mentor ||
-                "Mentor de conversação"
-        };
-    }
-
-    ensureLanguageProgress(language) {
-        if (!Array.isArray(state.languages)) {
-            state.languages = [];
-        }
-
-        const normalizedCode = String(
-            language.code
-        )
-            .trim()
-            .toLowerCase();
-
-        let languageRecord =
-            state.languages.find(
-                (item) =>
-                    String(
-                        item.code ||
-                        item.id ||
-                        ""
-                    )
-                        .trim()
-                        .toLowerCase() ===
-                    normalizedCode
-            );
-
-        if (!languageRecord) {
-            languageRecord = {
-                code: normalizedCode,
-                name: language.name,
-                flag: language.flag,
-                mentor: language.mentor,
-                level:
-                    state.profile?.levelTag ||
-                    "A1",
-                stats: {}
-            };
-
-            state.languages.push(languageRecord);
-        }
-
-        if (!languageRecord.stats || typeof languageRecord.stats !== "object") {
-            languageRecord.stats = {};
-        }
-
-        languageRecord.stats.conversationSeconds =
-            this.toSafeNumber(
-                languageRecord.stats
-                    .conversationSeconds
-            );
-
-        languageRecord.stats.conversationsCompleted =
-            this.toSafeNumber(
-                languageRecord.stats
-                    .conversationsCompleted
-            );
-
-        languageRecord.stats.pronunciationErrors =
-            this.toSafeNumber(
-                languageRecord.stats
-                    .pronunciationErrors
-            );
-
-        languageRecord.stats.recordedAudioBytes =
-            this.toSafeNumber(
-                languageRecord.stats
-                    .recordedAudioBytes
-            );
-
-        return languageRecord;
-    }
-
-    getConversationMinutes(languageCode) {
-        const languages = Array.isArray(
-            state.languages
-        )
-            ? state.languages
-            : [];
-
-        const language = languages.find(
-            (item) =>
-                String(
-                    item.code ||
-                    item.id ||
-                    ""
-                )
-                    .trim()
-                    .toLowerCase() ===
-                String(languageCode)
-                    .trim()
-                    .toLowerCase()
-        );
-
-        const seconds = this.toSafeNumber(
-            language?.stats?.conversationSeconds
-        );
-
-        return Math.floor(seconds / 60);
-    }
-
-    toSafeNumber(value) {
-        const number = Number(value);
-
-        return Number.isFinite(number)
-            ? number
-            : 0;
-    }
-
-    saveProgress() {
-        try {
-            storage.save();
-        } catch (error) {
-            console.error(
-                "Erro ao salvar o progresso de fala:",
-                error
-            );
-        }
+    reportMarkup(report, heading) {
+        const repetitions = report.repetitions?.length ? report.repetitions.map((item) => `${escapeHTML(item.word)} (${item.count}×)`).join(" • ") : "Nenhuma repetição excessiva identificada";
+        const fillers = report.fillers?.length ? report.fillers.map((item) => `${escapeHTML(item.filler)} (${item.count}×)`).join(" • ") : "Nenhuma muleta identificada na transcrição";
+        return `
+            <article class="card communication-report-card">
+                <p class="eyebrow">${escapeHTML(heading)}</p>
+                <h2>${escapeHTML(report.moduleTitle)}</h2>
+                <div class="profile-stats-grid communication-report-stats">
+                    <div class="stat-card"><div class="stat-details"><small>Palavras por minuto</small><strong>${Number(report.wordsPerMinute) || 0}</strong></div></div>
+                    <div class="stat-card"><div class="stat-details"><small>Variedade lexical</small><strong>${Math.round((Number(report.lexicalVariety) || 0) * 100)}%</strong></div></div>
+                    <div class="stat-card"><div class="stat-details"><small>Muletas</small><strong>${Number(report.fillerCount) || 0}</strong></div></div>
+                    <div class="stat-card"><div class="stat-details"><small>Duração</small><strong>${Number(report.durationSeconds) || 0}s</strong></div></div>
+                </div>
+                <div class="communication-report-grid">
+                    <div><h3>Repetições</h3><p>${repetitions}</p></div>
+                    <div><h3>Muletas</h3><p>${fillers}</p></div>
+                    <div><h3>Próximos exercícios</h3><ul>${(report.recommendations || []).map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></div>
+                </div>
+                <p class="form-help">${escapeHTML(report.pronunciationStatus || "")}</p>
+            </article>
+        `;
     }
 
     startTimer() {
         this.stopTimer();
-        this.updateTimer(0);
-
-        this.timerInterval = window.setInterval(
-            () => {
-                if (
-                    !this.session.isRecording ||
-                    !this.session.startedAt
-                ) {
-                    return;
-                }
-
-                const elapsedSeconds = Math.floor(
-                    (
-                        Date.now() -
-                        this.session.startedAt
-                    ) / 1000
-                );
-
-                this.session.elapsedSeconds =
-                    elapsedSeconds;
-
-                this.updateTimer(
-                    elapsedSeconds
-                );
-            },
-            1000
-        );
+        this.timer = window.setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.startedAt) / 1000);
+            const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+            const seconds = String(elapsed % 60).padStart(2, "0");
+            const timer = this.querySelector("#communicationTimer");
+            if (timer) timer.textContent = `${minutes}:${seconds}`;
+        }, 250);
     }
 
     stopTimer() {
-        if (this.timerInterval !== null) {
-            window.clearInterval(
-                this.timerInterval
-            );
+        if (this.timer) window.clearInterval(this.timer);
+        this.timer = null;
+    }
 
-            this.timerInterval = null;
+    startMeter(stream) {
+        try {
+            this.audioContext = new AudioContext();
+            const source = this.audioContext.createMediaStreamSource(stream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 256;
+            source.connect(this.analyser);
+            const data = new Uint8Array(this.analyser.frequencyBinCount);
+            const draw = () => {
+                if (!this.recording || !this.analyser) return;
+                this.analyser.getByteTimeDomainData(data);
+                const rms = Math.sqrt(data.reduce((sum, value) => sum + Math.pow((value - 128) / 128, 2), 0) / data.length);
+                const level = Math.min(100, Math.round(rms * 360));
+                this.volumeSamples.push(level);
+                const meter = this.querySelector("#communicationMeter");
+                if (meter) meter.style.width = `${Math.max(2, level)}%`;
+                this.animationFrame = requestAnimationFrame(draw);
+            };
+            draw();
+        } catch {
+            // A gravação continua mesmo sem visualização da intensidade.
         }
     }
 
-    updateTimer(totalSeconds) {
-        if (!this.timerElement) {
-            return;
-        }
-
-        const minutes = Math.floor(
-            totalSeconds / 60
-        );
-
-        const seconds = totalSeconds % 60;
-
-        this.timerElement.textContent =
-            `${String(minutes).padStart(2, "0")}:` +
-            `${String(seconds).padStart(2, "0")}`;
-
-        this.timerElement.setAttribute(
-            "datetime",
-            `PT${totalSeconds}S`
-        );
+    stopMeter() {
+        if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+        this.analyser = null;
+        this.audioContext?.close?.().catch(() => {});
+        this.audioContext = null;
     }
 
-    updateErrorCounter() {
-        if (this.errorElement) {
-            this.errorElement.textContent = String(
-                this.session.pronunciationErrors
-            );
-        }
+    getAudioMetrics() {
+        if (!this.volumeSamples.length) return { averageVolume: 0, peakVolume: 0, silenceRatio: 0 };
+        const averageVolume = this.volumeSamples.reduce((sum, value) => sum + value, 0) / this.volumeSamples.length;
+        const peakVolume = Math.max(...this.volumeSamples);
+        const silenceRatio = this.volumeSamples.filter((value) => value < 7).length / this.volumeSamples.length;
+        return { averageVolume: Number(averageVolume.toFixed(1)), peakVolume, silenceRatio: Number(silenceRatio.toFixed(2)) };
     }
 
-    showAudioPreview(audioBlob) {
-        if (!this.audioPreview) {
-            return;
-        }
-
-        this.revokePreviewUrl();
-        this.previewUrl = URL.createObjectURL(
-            audioBlob
-        );
-
-        this.audioPreview.src = this.previewUrl;
-        this.audioPreview.hidden = false;
-        this.previewWrapper?.removeAttribute(
-            "hidden"
-        );
-
-        if (this.audioMetadata) {
-            this.audioMetadata.textContent =
-                `${this.formatDuration(this.session.elapsedSeconds)} · ` +
-                `${this.formatFileSize(audioBlob.size)}`;
-        }
+    updateTranscriptFields() {
+        const field = this.querySelector("#communicationTranscript");
+        const interim = this.querySelector("#communicationInterim");
+        if (field && document.activeElement !== field) field.value = this.transcript;
+        if (interim) interim.textContent = this.interim ? `Reconhecendo: ${this.interim}` : "";
+        this.updateReanalyzeButton();
     }
 
-    hideAudioPreview() {
-        if (this.audioPreview) {
-            this.audioPreview.pause();
-            this.audioPreview.removeAttribute("src");
-            this.audioPreview.load();
-            this.audioPreview.hidden = true;
-        }
-
-        this.previewWrapper?.setAttribute(
-            "hidden",
-            ""
-        );
+    updateReanalyzeButton() {
+        const button = this.querySelector("#reanalyzeCommunication");
+        if (button) button.disabled = !String(this.querySelector("#communicationTranscript")?.value || this.transcript).trim();
     }
 
-    revokePreviewUrl() {
-        if (this.previewUrl) {
-            URL.revokeObjectURL(this.previewUrl);
-            this.previewUrl = "";
+    updateRecorderControls(active, processing = false) {
+        const start = this.querySelector("#startCommunication");
+        const stop = this.querySelector("#stopCommunication");
+        const cancel = this.querySelector("#cancelCommunication");
+        if (start) start.disabled = active || processing;
+        if (stop) stop.disabled = !active || processing;
+        if (cancel) cancel.disabled = !active;
+    }
+
+    setStatus(message, error = false) {
+        const status = this.querySelector("#communicationStatus");
+        if (!status) return;
+        status.textContent = message;
+        status.classList.toggle("form-error", error);
+    }
+
+    setAudioPreview(blob) {
+        this.clearAudioPreview();
+        this.audioUrl = URL.createObjectURL(blob);
+        const audio = this.querySelector("#communicationAudio");
+        if (audio) {
+            audio.src = this.audioUrl;
+            audio.hidden = false;
         }
     }
 
-    createFinishedMessage(result) {
-        if (!result?.valid) {
-            return (
-                `Áudio gravado. Para contar no progresso, ` +
-                `a sessão precisa durar pelo menos ` +
-                `${MINIMUM_VALID_SESSION_SECONDS} segundos.`
-            );
-        }
-
-        const sessionDuration =
-            this.formatDuration(
-                result.elapsedSeconds
-            );
-
-        if (
-            result.unlockedAchievements.length > 0
-        ) {
-            return (
-                `${sessionDuration} gravados. ` +
-                `${result.unlockedAchievements.length} ` +
-                `${result.unlockedAchievements.length === 1 ? "nova conquista desbloqueada" : "novas conquistas desbloqueadas"}.`
-            );
-        }
-
-        return (
-            `${sessionDuration} gravados. ` +
-            `${result.totalMinutes} minutos acumulados neste idioma.`
-        );
+    clearAudioPreview() {
+        if (this.audioUrl) URL.revokeObjectURL(this.audioUrl);
+        this.audioUrl = "";
+        this.audioBlob = null;
     }
 
-    formatDuration(totalSeconds) {
-        const minutes = Math.floor(
-            totalSeconds / 60
-        );
-
-        const seconds = totalSeconds % 60;
-
-        if (minutes === 0) {
-            return `${seconds} segundos`;
-        }
-
-        return `${minutes} min ${seconds} s`;
-    }
-
-    formatFileSize(sizeBytes) {
-        if (sizeBytes < 1024) {
-            return `${sizeBytes} B`;
-        }
-
-        const kilobytes = sizeBytes / 1024;
-
-        if (kilobytes < 1024) {
-            return `${kilobytes.toFixed(1)} KB`;
-        }
-
-        return `${(kilobytes / 1024).toFixed(1)} MB`;
-    }
-
-    getMicrophoneErrorMessage(error) {
-        const messages = {
-            NotAllowedError:
-                "Permissão do microfone negada. Autorize o acesso nas configurações do navegador.",
-            PermissionDeniedError:
-                "Permissão do microfone negada. Autorize o acesso nas configurações do navegador.",
-            NotFoundError:
-                "Nenhum microfone foi encontrado neste dispositivo.",
-            DevicesNotFoundError:
-                "Nenhum microfone foi encontrado neste dispositivo.",
-            NotReadableError:
-                "O microfone está sendo usado por outro aplicativo.",
-            TrackStartError:
-                "O microfone está sendo usado por outro aplicativo.",
-            SecurityError:
-                "A gravação exige uma conexão segura HTTPS.",
-            AbortError:
-                "A captura do microfone foi interrompida. Tente novamente."
-        };
-
-        return (
-            messages[error?.name] ||
-            error?.message ||
-            "Não foi possível acessar o microfone."
-        );
-    }
-
-    syncButtonDisabledState() {
-        if (this.micButton) {
-            this.micButton.disabled = this.isBusy;
-        }
-    }
-
-    updateInterface(
-        status,
-        customMessage = ""
-    ) {
-        const isRecording =
-            status === "recording";
-
-        const isProcessing =
-            status === "processing" ||
-            status === "requesting";
-
-        const hasError = status === "error";
-        const isReady = status === "finished";
-
-        this.controlPanel?.classList.toggle(
-            "is-recording",
-            isRecording
-        );
-
-        this.controlPanel?.classList.toggle(
-            "is-processing",
-            isProcessing
-        );
-
-        this.controlPanel?.classList.toggle(
-            "has-error",
-            hasError
-        );
-
-        this.controlPanel?.classList.toggle(
-            "is-ready",
-            isReady
-        );
-
-        this.waveform?.classList.toggle(
-            "is-live",
-            isRecording
-        );
-
-        this.waveform?.classList.toggle(
-            "is-simulated",
-            isProcessing
-        );
-
-        this.micButton?.classList.toggle(
-            "is-recording",
-            isRecording
-        );
-
-        if (this.micButton) {
-            this.micButton.setAttribute(
-                "aria-pressed",
-                String(isRecording)
-            );
-
-            this.micButton.setAttribute(
-                "aria-label",
-                isRecording
-                    ? "Finalizar gravação"
-                    : "Iniciar gravação"
-            );
-        }
-
-        if (this.micIcon) {
-            this.micIcon.textContent =
-                isRecording ? "⏹️" : "🎙️";
-        }
-
-        this.syncButtonDisabledState();
-
-        if (!this.statusElement) {
-            return;
-        }
-
-        if (customMessage) {
-            this.statusElement.textContent =
-                customMessage;
-            return;
-        }
-
-        const messages = {
-            idle: "Pronto para gravar",
-            requesting: "Aguardando microfone…",
-            recording: "Gravando sua voz…",
-            processing: "Processando gravação…",
-            finished: "Gravação concluída",
-            error: "Não foi possível iniciar"
-        };
-
-        this.statusElement.textContent =
-            messages[status] ||
-            messages.idle;
-    }
-
-    render() {
-        const language =
-            this.resolveCurrentLanguage();
-
-        this.dataset.renderedLanguage = language.code;
-        this.innerHTML = `
-            <section
-                class="speaking-container"
-                aria-labelledby="speakingPageTitle">
-
-                <header class="speaking-page-header">
-                    <p class="eyebrow">
-                        Conversação
-                    </p>
-
-                    <h1 id="speakingPageTitle">
-                        Prática de fala
-                    </h1>
-
-                    <p>
-                        Grave sua voz em
-                        ${escapeHTML(language.name)} e ouça o
-                        resultado antes da análise automática.
-                    </p>
-                </header>
-
-                <article class="speaking-mentor-stage">
-                    <div class="speaking-avatar-wrapper">
-                        <div
-                            class="speaking-avatar"
-                            role="img"
-                            aria-label="${escapeHTML(language.mentor)}">
-                            ${escapeHTML(language.flag)}
-                        </div>
-                    </div>
-
-                    <strong>
-                        ${escapeHTML(language.mentor)}
-                    </strong>
-
-                    <span class="speaking-label">
-                        Tempo da sessão
-                    </span>
-
-                    <time
-                        data-field="conversation-timer"
-                        datetime="PT0S">
-                        00:00
-                    </time>
-                </article>
-
-                <article class="speaking-prompt-card">
-                    <span class="speaking-label">
-                        Proposta da conversa
-                    </span>
-
-                    <p class="speaking-target-text">
-                        Conte algo sobre o seu dia no idioma
-                        que está estudando.
-                    </p>
-
-                    <div class="speaking-analysis-text">
-                        <span>
-                            Análise fonética ainda não conectada
-                        </span>
-
-                        <strong
-                            data-field="pronunciation-errors"
-                            hidden>
-                            0
-                        </strong>
-
-                        <small>
-                            A gravação é feita no dispositivo. A transcrição,
-                            a resposta por voz e a avaliação fonética serão
-                            exibidas quando o serviço de fala estiver conectado.
-                        </small>
-                    </div>
-                </article>
-
-                <div
-                    class="speaking-waveform-container"
-                    aria-hidden="true">
-
-                    <span class="waveform-bar"></span>
-                    <span class="waveform-bar"></span>
-                    <span class="waveform-bar"></span>
-                    <span class="waveform-bar"></span>
-                    <span class="waveform-bar"></span>
-                    <span class="waveform-bar"></span>
-                </div>
-
-                <section
-                    class="speaking-recording-preview"
-                    hidden>
-
-                    <span class="speaking-label">
-                        Sua última gravação
-                    </span>
-
-                    <audio
-                        data-field="audio-preview"
-                        controls
-                        preload="metadata"
-                        hidden>
-                    </audio>
-
-                    <small data-field="audio-metadata"></small>
-                </section>
-
-                <div class="speaking-control-panel">
-                    <button
-                        type="button"
-                        class="mic-button"
-                        aria-label="Iniciar gravação"
-                        aria-pressed="false">
-
-                        <span
-                            data-field="mic-icon"
-                            aria-hidden="true">
-                            🎙️
-                        </span>
-
-                        <span
-                            class="mic-button-ripple"
-                            aria-hidden="true">
-                        </span>
-                    </button>
-
-                    <p
-                        class="speaking-status-text"
-                        role="status"
-                        aria-live="polite">
-                        Pronto para gravar
-                    </p>
-                </div>
-            </section>
-        `;
+    async cancelSession() {
+        this.sessionToken += 1;
+        this.recording = false;
+        this.stopTimer();
+        this.stopMeter();
+        speechRecognition.cancel();
+        await audioRecorder.cancel().catch(() => {});
+        this.updateRecorderControls(false);
+        if (router.getCurrentPage() === "speaking") this.setStatus("Gravação cancelada.");
     }
 }
 
-if (!customElements.get("ef-speaking-page")) {
-    customElements.define(
-        "ef-speaking-page",
-        EFSpeakingPage
-    );
-}
+if (!customElements.get("ef-speaking-page")) customElements.define("ef-speaking-page", EFSpeakingPage);
