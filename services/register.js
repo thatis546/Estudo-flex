@@ -25,7 +25,17 @@ export function registerUser(formData = {}) {
             name: language.name,
             flag: language.flag,
             mentor: language.mentor,
-            level: state.profile.levelTag || "A1",
+            level: "",
+            setupComplete: false,
+            setupStatus: "diagnostic-required",
+            learningProfile: {
+                goal: state.profile.goal,
+                contact: state.profile.contact || "",
+                dailyMinutes: state.profile.dailyMinutes,
+                lifeContext: state.profile.lifeContext,
+                learningStyle: state.profile.learningStyle,
+                goalDetails: state.profile.goalDetails
+            },
             stats: {}
         });
         storage.save();

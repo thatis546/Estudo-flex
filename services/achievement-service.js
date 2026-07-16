@@ -41,13 +41,47 @@ function makeId(prefix = "record") {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizeAchievementRecord(record) {
+    if (record && typeof record === "object" && !Array.isArray(record)) return record;
+    if (typeof record === "string" && record.trim()) {
+        const catalog = getAchievementById(record.trim());
+        return {
+            id: record.trim(),
+            key: record.trim(),
+            type: catalog?.type || "legacy",
+            category: catalog?.category || "aprendizagem",
+            icon: catalog?.icon || "✨",
+            title: catalog?.title || "Conquista anterior",
+            description: catalog?.description || "Conquista importada de uma versão anterior.",
+            xp: 0,
+            xpEarned: 0,
+            unlockedAt: null,
+            metadata: { migratedFromPrimitive: true }
+        };
+    }
+    return null;
+}
+
+function normalizeLedgerEntry(entry) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+    const amount = Math.max(0, Number(entry.amount) || 0);
+    const idempotencyKey = cleanText(entry.idempotencyKey || entry.id);
+    if (!amount || !idempotencyKey) return null;
+    return {
+        ...entry,
+        id: cleanText(entry.id, makeId("xp")),
+        idempotencyKey,
+        amount
+    };
+}
+
 function ensureAchievementState() {
     state.profile = state.profile && typeof state.profile === "object" ? state.profile : {};
     state.profile.achievements = Array.isArray(state.profile.achievements)
-        ? state.profile.achievements
+        ? state.profile.achievements.map(normalizeAchievementRecord).filter(Boolean)
         : [];
     state.profile.xpLedger = Array.isArray(state.profile.xpLedger)
-        ? state.profile.xpLedger
+        ? state.profile.xpLedger.map(normalizeLedgerEntry).filter(Boolean)
         : [];
     state.profile.xp = Math.max(0, Number(state.profile.xp) || 0);
     state.profile.activityXP = Math.max(0, Number(state.profile.activityXP) || 0);
