@@ -307,3 +307,70 @@
         transition: none !important;
     }
 }
+
+/* v0.7 — home com estudos e trilha separados */
+.home-section {
+    display: grid;
+    gap: var(--space-md);
+    width: 100%;
+}
+
+.home-section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+}
+
+.home-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-md);
+}
+
+.home-action-card,
+.home-professional-card {
+    display: grid;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.home-action-icon,
+.home-professional-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    font-size: 22px;
+}
+
+.home-professional-card {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+}
+
+.home-professional-content {
+    min-width: 0;
+}
+
+.home-empty-action {
+    display: grid;
+    gap: var(--space-md);
+}
+
+@media (max-width: 760px) {
+    .home-action-grid {
+        grid-template-columns: 1fr;
+    }
+    .home-professional-card {
+        grid-template-columns: auto 1fr;
+    }
+    .home-professional-card > button {
+        grid-column: 1 / -1;
+    }
+}
