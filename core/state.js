@@ -1,96 +1,9 @@
-const STATE_SCHEMA_VERSION = 5;
-const CEFR_LEVELS = new Set(["A0", "A1", "A2", "B1", "B2", "C1", "C2"]);
-const THEMES = new Set(["light", "dark", "system"]);
-const TOP_LEVEL_KEYS = new Set([
-    "schemaVersion",
-    "user",
-    "profile",
-    "languages",
-    "currentLanguage",
-    "settings"
-]);
+import { getJourney, getJourneyLabel, journeyFromLegacyCefr } from "../data/journeys.js";
+import { EF_LANGUAGES } from "../data/languages.js";
 
-function createInitialState() {
-    return {
-        schemaVersion: STATE_SCHEMA_VERSION,
-        user: {},
-        profile: {
-            name: "",
-            language: "",
-            supportMode: "",
-            goal: "",
-            contact: "",
-            dailyMinutes: 0,
-            lifeContext: "",
-            learningStyle: "",
-            diagnosticScore: 0,
-            onboardingComplete: false,
-            achievements: [],
-            xp: 0,
-            goalDetails: {
-                deadline: "",
-                frequency: "",
-                interests: []
-            },
-            onboardingProgress: {
-                step: 0,
-                paused: false,
-                updatedAt: null
-            },
-            level: 1,
-            levelTag: "A1",
-            diagnosticAnswers: [],
-            diagnosticProgress: {
-                step: 0,
-                answers: [],
-                scores: [],
-                currentDifficulty: 3
-            },
-            levelResult: {
-                cefr: "A1",
-                score: 0,
-                confidence: 0,
-                strengths: [],
-                weaknesses: [],
-                completedAt: null
-            },
-            dailyPlan: {
-                review: "",
-                lesson: "",
-                conversation: ""
-            },
-            professionalTrack: "",
-            professional: {
-                track: null,
-                progress: {},
-                completedModules: [],
-                unlockedModules: []
-            },
-            mentor: {
-                personality: "guided",
-                mood: "friendly",
-                speed: "normal",
-                correctionStyle: "immediate",
-                humor: 0.8,
-                sarcasm: 0.1,
-                notes: []
-            },
-            learning: {
-                streak: 0,
-                totalStudyMinutes: 0,
-                lastStudyDate: null,
-                pendingReviews: [],
-                weakTopics: [],
-                masteredTopics: []
-            }
-        },
-        languages: [],
-        currentLanguage: "",
-        settings: {
-            theme: "light"
-        }
-    };
-}
+const STATE_SCHEMA_VERSION = 7;
+const THEMES = new Set(["light", "dark", "system"]);
+const TOP_LEVEL_KEYS = new Set(["schemaVersion", "user", "profile", "languages", "currentLanguage", "settings"]);
 
 function isPlainObject(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -101,76 +14,275 @@ function clone(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
-function toFiniteNumber(value, fallback = 0) {
+function toNumber(value, fallback = 0) {
     const number = Number(value);
     return Number.isFinite(number) ? number : fallback;
 }
 
-function normalizeString(value) {
+function text(value) {
     return typeof value === "string" ? value.trim() : "";
 }
 
+function stringList(value) {
+    return Array.isArray(value) ? [...new Set(value.map(text).filter(Boolean))] : [];
+}
+
 function normalizeLanguageCode(value) {
-    const raw = isPlainObject(value)
-        ? value.code || value.id || ""
-        : value;
-    return normalizeString(String(raw ?? "")).toLowerCase();
+    const raw = isPlainObject(value) ? value.code || value.id || "" : value;
+    return text(String(raw ?? "")).toLowerCase();
 }
 
-function normalizeCefr(value, fallback = "A1") {
-    const level = normalizeString(String(value ?? "")).toUpperCase();
-    return CEFR_LEVELS.has(level) ? level : fallback;
-}
-
-function normalizeLevelResult(value, fallbackLevel = "A1") {
-    const source = isPlainObject(value) ? value : {};
+function createEmptyDiagnosticResult() {
     return {
-        cefr: normalizeCefr(source.cefr, fallbackLevel),
-        score: toFiniteNumber(source.score, 0),
-        confidence: Math.min(1, Math.max(0, toFiniteNumber(source.confidence, 0))),
-        strengths: Array.isArray(source.strengths) ? [...source.strengths] : [],
-        weaknesses: Array.isArray(source.weaknesses) ? [...source.weaknesses] : [],
-        completedAt: normalizeString(source.completedAt) || null
+        journeyId: "",
+        journeyLabel: "",
+        score: 0,
+        confidence: 0,
+        strengths: [],
+        developmentAreas: [],
+        evidence: {},
+        completedAt: null,
+        version: 2
     };
 }
 
-function normalizeLanguageRecord(record) {
+function createEmptyLanguageProfile(globalProfile = {}) {
+    return {
+        goal: "",
+        goalDescription: "",
+        useCase: "",
+        contact: "",
+        dailyMinutes: 0,
+        lifeContext: "",
+        learningStyle: text(globalProfile.learningStyle),
+        goalDetails: {
+            deadline: "",
+            frequency: "",
+            interests: []
+        }
+    };
+}
+
+function createEmptyProfessionalState() {
+    return {
+        selectedTrack: "",
+        tracks: {}
+    };
+}
+
+function createEmptyCommunicationState() {
+    return {
+        selectedModule: "pronunciation",
+        reports: [],
+        settings: {
+            transcriptLanguage: "auto",
+            keepAudio: false
+        }
+    };
+}
+
+function createInitialState() {
+    return {
+        schemaVersion: STATE_SCHEMA_VERSION,
+        user: {},
+        profile: {
+            name: "",
+            nativeLanguage: "pt-BR",
+            language: "",
+            supportMode: "pt",
+            goal: "",
+            goalDescription: "",
+            useCase: "",
+            contact: "",
+            dailyMinutes: 0,
+            lifeContext: "",
+            learningStyle: "",
+            onboardingComplete: false,
+            onboardingProgress: { step: 0, paused: false, updatedAt: null },
+            goalDetails: { deadline: "", frequency: "", interests: [] },
+            journeyId: "",
+            journeyLabel: "",
+            level: 0,
+            levelTag: "",
+            diagnosticScore: 0,
+            diagnosticAnswers: [],
+            diagnosticProgress: { step: 0, answers: [], scores: [], questionIds: [] },
+            levelResult: createEmptyDiagnosticResult(),
+            dailyPlan: { review: "", lesson: "", communication: "" },
+            achievements: [],
+            xp: 0,
+            activityXP: 0,
+            xpLedger: [],
+            avatar: {
+                source: "generated",
+                style: "estudo-flex-classic",
+                imageUrl: "./assets/avatars/default-user.svg",
+                description: "",
+                validated: true,
+                validation: { hasSingleFace: true, illustrated: true, checkedAt: null }
+            },
+            mentor: {
+                personality: "guided",
+                mood: "friendly",
+                speed: "normal",
+                correctionStyle: "final",
+                humor: 0.8,
+                sarcasm: 0.1
+            },
+            aiMemory: {
+                enabled: true,
+                items: [],
+                blockedFingerprints: []
+            },
+            learning: {
+                streak: 0,
+                totalStudyMinutes: 0,
+                lastStudyDate: null,
+                pendingReviews: [],
+                weakTopics: [],
+                masteredTopics: [],
+                recentActivities: []
+            }
+        },
+        languages: [],
+        currentLanguage: "",
+        settings: { theme: "light" }
+    };
+}
+
+function normalizeDiagnosticResult(value, fallbackJourney = "") {
+    const source = isPlainObject(value) ? value : {};
+    const legacy = source.cefr || source.levelTag || "";
+    const journeyId = text(source.journeyId) || text(fallbackJourney) || (legacy ? journeyFromLegacyCefr(legacy) : "");
+    const journey = journeyId ? getJourney(journeyId) : null;
+    return {
+        ...createEmptyDiagnosticResult(),
+        ...source,
+        journeyId: journey?.id || "",
+        journeyLabel: journey?.label || "",
+        score: Math.max(0, toNumber(source.score, 0)),
+        confidence: Math.min(1, Math.max(0, toNumber(source.confidence, 0))),
+        strengths: stringList(source.strengths),
+        developmentAreas: stringList(source.developmentAreas || source.weaknesses),
+        evidence: isPlainObject(source.evidence) ? clone(source.evidence) : {},
+        completedAt: text(source.completedAt) || null,
+        version: Math.max(2, Math.floor(toNumber(source.version, 2)))
+    };
+}
+
+function normalizeLearningProfile(value, globalProfile = {}) {
+    const defaults = createEmptyLanguageProfile(globalProfile);
+    const source = isPlainObject(value) ? value : {};
+    const goalDetails = isPlainObject(source.goalDetails) ? source.goalDetails : {};
+    return {
+        ...defaults,
+        ...source,
+        goal: text(source.goal),
+        goalDescription: text(source.goalDescription),
+        useCase: text(source.useCase),
+        contact: text(source.contact),
+        dailyMinutes: Math.max(0, toNumber(source.dailyMinutes, 0)),
+        lifeContext: text(source.lifeContext),
+        learningStyle: text(source.learningStyle || globalProfile.learningStyle),
+        goalDetails: {
+            ...defaults.goalDetails,
+            ...goalDetails,
+            deadline: text(goalDetails.deadline),
+            frequency: text(goalDetails.frequency),
+            interests: stringList(goalDetails.interests)
+        }
+    };
+}
+
+function normalizeProfessional(value) {
+    const source = isPlainObject(value) ? value : {};
+    const tracks = isPlainObject(source.tracks) ? clone(source.tracks) : {};
+    // Migração da estrutura antiga de uma única trilha.
+    const legacyTrack = text(source.selectedTrack || source.track);
+    if (legacyTrack && !tracks[legacyTrack]) {
+        tracks[legacyTrack] = {
+            progress: isPlainObject(source.progress) ? clone(source.progress) : {},
+            completedModules: stringList(source.completedModules),
+            unlockedModules: stringList(source.unlockedModules),
+            responses: {},
+            updatedAt: null
+        };
+    }
+    return { selectedTrack: legacyTrack, tracks };
+}
+
+function normalizeCommunication(value) {
+    const source = isPlainObject(value) ? value : {};
+    const settings = isPlainObject(source.settings) ? source.settings : {};
+    return {
+        selectedModule: text(source.selectedModule) || "pronunciation",
+        reports: Array.isArray(source.reports) ? clone(source.reports).slice(0, 100) : [],
+        settings: {
+            transcriptLanguage: text(settings.transcriptLanguage) || "auto",
+            keepAudio: Boolean(settings.keepAudio)
+        }
+    };
+}
+
+function normalizeLanguageRecord(record, globalProfile = {}) {
     if (!isPlainObject(record)) return null;
     const code = normalizeLanguageCode(record);
     if (!code) return null;
 
-    const level = normalizeCefr(record.level, "A1");
+    const legacyJourney = text(record.journeyId) || (record.level ? journeyFromLegacyCefr(record.level) : "");
+    const diagnosticResult = normalizeDiagnosticResult(record.diagnosticResult || record.levelResult, legacyJourney);
+    const journeyId = diagnosticResult.completedAt ? diagnosticResult.journeyId : "";
     const stats = isPlainObject(record.stats) ? record.stats : {};
+    const progress = isPlainObject(record.diagnosticProgress) ? record.diagnosticProgress : {};
+    const dailyPlan = isPlainObject(record.dailyPlan) ? record.dailyPlan : {};
+    const setupComplete = Boolean(record.setupComplete && diagnosticResult.completedAt && journeyId);
+
     return {
         ...record,
         code,
-        name: normalizeString(record.name || record.label) || code.toUpperCase(),
-        flag: normalizeString(record.flag) || "🌍",
-        mentor: normalizeString(record.mentor),
-        level,
-        xp: Math.max(0, toFiniteNumber(record.xp, 0)),
-        progress: Math.min(100, Math.max(0, toFiniteNumber(record.progress, 0))),
-        diagnosticScore: toFiniteNumber(record.diagnosticScore, record.levelResult?.score || 0),
-        diagnosticAnswers: Array.isArray(record.diagnosticAnswers)
-            ? [...record.diagnosticAnswers]
-            : [],
-        levelResult: normalizeLevelResult(record.levelResult, level),
+        name: text(record.name || record.label) || code.toUpperCase(),
+        flag: text(record.flag) || "🌍",
+        country: text(record.country),
+        mentor: text(record.mentor),
+        journeyId,
+        journeyLabel: journeyId ? getJourneyLabel(journeyId) : "",
+        level: journeyId ? getJourneyLabel(journeyId) : "",
+        setupComplete,
+        setupStatus: setupComplete ? "ready" : text(record.setupStatus) || "setup-required",
+        learningProfile: normalizeLearningProfile(record.learningProfile, globalProfile),
+        diagnosticResult,
+        levelResult: diagnosticResult,
+        diagnosticScore: diagnosticResult.score,
+        diagnosticAnswers: Array.isArray(record.diagnosticAnswers) ? clone(record.diagnosticAnswers) : [],
+        diagnosticProgress: {
+            step: Math.max(0, Math.floor(toNumber(progress.step, 0))),
+            answers: Array.isArray(progress.answers) ? clone(progress.answers) : [],
+            scores: Array.isArray(progress.scores) ? progress.scores.map((item) => toNumber(item, 0)) : [],
+            questionIds: stringList(progress.questionIds)
+        },
+        dailyPlan: {
+            review: text(dailyPlan.review),
+            lesson: text(dailyPlan.lesson),
+            communication: text(dailyPlan.communication || dailyPlan.conversation)
+        },
+        reviewQueue: Array.isArray(record.reviewQueue) ? clone(record.reviewQueue) : [],
+        professional: normalizeProfessional(record.professional),
+        communicationLab: normalizeCommunication(record.communicationLab),
+        xp: Math.max(0, toNumber(record.xp, 0)),
+        progress: Math.min(100, Math.max(0, toNumber(record.progress, 0))),
         stats: {
-            ...stats,
-            knownWords: Math.max(0, toFiniteNumber(stats.knownWords, 0)),
-            lessonsCompleted: Math.max(0, toFiniteNumber(stats.lessonsCompleted, 0)),
-            conversationSeconds: Math.max(0, toFiniteNumber(stats.conversationSeconds, 0)),
-            conversationsCompleted: Math.max(0, toFiniteNumber(stats.conversationsCompleted, 0)),
-            pronunciationErrors: Math.max(0, toFiniteNumber(stats.pronunciationErrors, 0)),
-            recordedAudioBytes: Math.max(0, toFiniteNumber(stats.recordedAudioBytes, 0))
+            knownWords: Math.max(0, toNumber(stats.knownWords, 0)),
+            lessonsCompleted: Math.max(0, toNumber(stats.lessonsCompleted, 0)),
+            reviewsCompleted: Math.max(0, toNumber(stats.reviewsCompleted, 0)),
+            speakingMinutes: Math.max(0, toNumber(stats.speakingMinutes || (stats.conversationSeconds / 60), 0)),
+            communicationSessions: Math.max(0, toNumber(stats.communicationSessions || stats.conversationsCompleted, 0)),
+            recordedAudioBytes: Math.max(0, toNumber(stats.recordedAudioBytes, 0))
         }
     };
 }
 
 class State {
-    constructor() {
-        this.reset();
-    }
+    constructor() { this.reset(); }
 
     reset() {
         Object.assign(this, clone(createInitialState()));
@@ -181,286 +293,189 @@ class State {
         const source = isPlainObject(savedState) ? savedState : {};
         const defaults = createInitialState();
         const sourceProfile = isPlainObject(source.profile) ? source.profile : {};
-        const sourceProfessional = isPlainObject(sourceProfile.professional)
-            ? sourceProfile.professional
-            : {};
-
-        const migratedTrack = normalizeString(
-            sourceProfessional.track || sourceProfile.professionalTrack
-        );
-        const levelTag = normalizeCefr(sourceProfile.levelTag || sourceProfile.levelResult?.cefr, "A1");
+        const legacyJourney = text(sourceProfile.journeyId) || (sourceProfile.levelTag ? journeyFromLegacyCefr(sourceProfile.levelTag) : "");
+        const profileResult = normalizeDiagnosticResult(sourceProfile.diagnosticResult || sourceProfile.levelResult, legacyJourney);
+        const avatar = isPlainObject(sourceProfile.avatar) ? sourceProfile.avatar : {};
+        const aiMemory = isPlainObject(sourceProfile.aiMemory) ? sourceProfile.aiMemory : {};
+        const learning = isPlainObject(sourceProfile.learning) ? sourceProfile.learning : {};
 
         this.schemaVersion = STATE_SCHEMA_VERSION;
-        this.user = {
-            ...defaults.user,
-            ...(isPlainObject(source.user) ? clone(source.user) : {})
-        };
-
+        this.user = isPlainObject(source.user) ? clone(source.user) : {};
         this.profile = {
             ...defaults.profile,
             ...sourceProfile,
-            name: normalizeString(sourceProfile.name),
+            name: text(sourceProfile.name),
+            nativeLanguage: text(sourceProfile.nativeLanguage) || "pt-BR",
             language: normalizeLanguageCode(sourceProfile.language),
-            supportMode: normalizeString(sourceProfile.supportMode),
-            goal: normalizeString(sourceProfile.goal),
-            contact: normalizeString(sourceProfile.contact),
-            lifeContext: normalizeString(sourceProfile.lifeContext),
-            learningStyle: normalizeString(sourceProfile.learningStyle),
-            dailyMinutes: Math.max(0, toFiniteNumber(sourceProfile.dailyMinutes, 0)),
-            diagnosticScore: toFiniteNumber(sourceProfile.diagnosticScore, 0),
+            supportMode: text(sourceProfile.supportMode) || "pt",
+            goal: text(sourceProfile.goal),
+            goalDescription: text(sourceProfile.goalDescription),
+            useCase: text(sourceProfile.useCase),
+            contact: text(sourceProfile.contact),
+            dailyMinutes: Math.max(0, toNumber(sourceProfile.dailyMinutes, 0)),
+            lifeContext: text(sourceProfile.lifeContext),
+            learningStyle: text(sourceProfile.learningStyle),
             onboardingComplete: Boolean(sourceProfile.onboardingComplete),
-            xp: Math.max(0, toFiniteNumber(sourceProfile.xp, 0)),
-            level: Math.max(1, toFiniteNumber(sourceProfile.level, 1)),
-            levelTag,
-            achievements: Array.isArray(sourceProfile.achievements)
-                ? clone(sourceProfile.achievements)
-                : [],
-            diagnosticAnswers: Array.isArray(sourceProfile.diagnosticAnswers)
-                ? [...sourceProfile.diagnosticAnswers]
-                : [],
+            onboardingProgress: {
+                ...defaults.profile.onboardingProgress,
+                ...(isPlainObject(sourceProfile.onboardingProgress) ? sourceProfile.onboardingProgress : {}),
+                step: Math.max(0, Math.floor(toNumber(sourceProfile.onboardingProgress?.step, 0)))
+            },
             goalDetails: {
                 ...defaults.profile.goalDetails,
                 ...(isPlainObject(sourceProfile.goalDetails) ? sourceProfile.goalDetails : {}),
-                interests: Array.isArray(sourceProfile.goalDetails?.interests)
-                    ? sourceProfile.goalDetails.interests.map(normalizeString).filter(Boolean)
-                    : []
+                interests: stringList(sourceProfile.goalDetails?.interests)
             },
-            onboardingProgress: {
-                ...defaults.profile.onboardingProgress,
-                ...(isPlainObject(sourceProfile.onboardingProgress)
-                    ? sourceProfile.onboardingProgress
-                    : {}),
-                step: Math.max(0, Math.floor(toFiniteNumber(sourceProfile.onboardingProgress?.step, 0))),
-                paused: Boolean(sourceProfile.onboardingProgress?.paused)
-            },
+            journeyId: profileResult.completedAt ? profileResult.journeyId : "",
+            journeyLabel: profileResult.completedAt ? profileResult.journeyLabel : "",
+            level: profileResult.completedAt ? getJourney(profileResult.journeyId).order : 0,
+            levelTag: profileResult.completedAt ? profileResult.journeyLabel : "",
+            diagnosticScore: profileResult.score,
+            diagnosticAnswers: Array.isArray(sourceProfile.diagnosticAnswers) ? clone(sourceProfile.diagnosticAnswers) : [],
             diagnosticProgress: {
                 ...defaults.profile.diagnosticProgress,
-                ...(isPlainObject(sourceProfile.diagnosticProgress)
-                    ? sourceProfile.diagnosticProgress
-                    : {}),
-                step: Math.max(0, Math.floor(toFiniteNumber(sourceProfile.diagnosticProgress?.step, 0))),
-                answers: Array.isArray(sourceProfile.diagnosticProgress?.answers)
-                    ? [...sourceProfile.diagnosticProgress.answers]
-                    : [],
-                scores: Array.isArray(sourceProfile.diagnosticProgress?.scores)
-                    ? sourceProfile.diagnosticProgress.scores.map((value) => toFiniteNumber(value, 0))
-                    : [],
-                currentDifficulty: Math.min(
-                    5,
-                    Math.max(1, Math.floor(toFiniteNumber(sourceProfile.diagnosticProgress?.currentDifficulty, 3)))
-                )
+                ...(isPlainObject(sourceProfile.diagnosticProgress) ? sourceProfile.diagnosticProgress : {}),
+                answers: Array.isArray(sourceProfile.diagnosticProgress?.answers) ? clone(sourceProfile.diagnosticProgress.answers) : [],
+                scores: Array.isArray(sourceProfile.diagnosticProgress?.scores) ? sourceProfile.diagnosticProgress.scores.map((item) => toNumber(item, 0)) : [],
+                questionIds: stringList(sourceProfile.diagnosticProgress?.questionIds)
             },
-            levelResult: normalizeLevelResult(sourceProfile.levelResult, levelTag),
+            levelResult: profileResult,
             dailyPlan: {
                 ...defaults.profile.dailyPlan,
-                ...(isPlainObject(sourceProfile.dailyPlan) ? sourceProfile.dailyPlan : {})
+                ...(isPlainObject(sourceProfile.dailyPlan) ? sourceProfile.dailyPlan : {}),
+                communication: text(sourceProfile.dailyPlan?.communication || sourceProfile.dailyPlan?.conversation)
             },
-            professionalTrack: migratedTrack,
-            professional: {
-                ...defaults.profile.professional,
-                ...sourceProfessional,
-                track: migratedTrack || null,
-                progress: isPlainObject(sourceProfessional.progress)
-                    ? clone(sourceProfessional.progress)
-                    : {},
-                completedModules: Array.isArray(sourceProfessional.completedModules)
-                    ? [...sourceProfessional.completedModules]
-                    : [],
-                unlockedModules: Array.isArray(sourceProfessional.unlockedModules)
-                    ? [...sourceProfessional.unlockedModules]
-                    : []
+            achievements: Array.isArray(sourceProfile.achievements) ? clone(sourceProfile.achievements) : [],
+            xp: Math.max(0, toNumber(sourceProfile.xp, 0)),
+            activityXP: Math.max(0, toNumber(sourceProfile.activityXP, sourceProfile.xp || 0)),
+            xpLedger: Array.isArray(sourceProfile.xpLedger) ? clone(sourceProfile.xpLedger) : [],
+            avatar: {
+                ...defaults.profile.avatar,
+                ...avatar,
+                source: text(avatar.source) || defaults.profile.avatar.source,
+                style: text(avatar.style) || defaults.profile.avatar.style,
+                imageUrl: text(avatar.imageUrl) || defaults.profile.avatar.imageUrl,
+                description: text(avatar.description),
+                validated: avatar.validated !== false,
+                validation: isPlainObject(avatar.validation) ? clone(avatar.validation) : clone(defaults.profile.avatar.validation)
             },
             mentor: {
                 ...defaults.profile.mentor,
-                ...(isPlainObject(sourceProfile.mentor) ? sourceProfile.mentor : {}),
-                notes: Array.isArray(sourceProfile.mentor?.notes)
-                    ? [...sourceProfile.mentor.notes]
-                    : []
+                ...(isPlainObject(sourceProfile.mentor) ? sourceProfile.mentor : {})
+            },
+            aiMemory: {
+                enabled: aiMemory.enabled !== false,
+                items: Array.isArray(aiMemory.items) ? clone(aiMemory.items) : [],
+                blockedFingerprints: stringList(aiMemory.blockedFingerprints)
             },
             learning: {
                 ...defaults.profile.learning,
-                ...(isPlainObject(sourceProfile.learning) ? sourceProfile.learning : {}),
-                streak: Math.max(0, toFiniteNumber(sourceProfile.learning?.streak, 0)),
-                totalStudyMinutes: Math.max(0, toFiniteNumber(sourceProfile.learning?.totalStudyMinutes, 0)),
-                pendingReviews: Array.isArray(sourceProfile.learning?.pendingReviews)
-                    ? clone(sourceProfile.learning.pendingReviews)
-                    : [],
-                weakTopics: Array.isArray(sourceProfile.learning?.weakTopics)
-                    ? [...sourceProfile.learning.weakTopics]
-                    : [],
-                masteredTopics: Array.isArray(sourceProfile.learning?.masteredTopics)
-                    ? [...sourceProfile.learning.masteredTopics]
-                    : []
+                ...learning,
+                streak: Math.max(0, toNumber(learning.streak, 0)),
+                totalStudyMinutes: Math.max(0, toNumber(learning.totalStudyMinutes, 0)),
+                pendingReviews: Array.isArray(learning.pendingReviews) ? clone(learning.pendingReviews) : [],
+                weakTopics: stringList(learning.weakTopics),
+                masteredTopics: stringList(learning.masteredTopics),
+                recentActivities: Array.isArray(learning.recentActivities) ? clone(learning.recentActivities).slice(0, 50) : []
             }
         };
 
-        const normalizedLanguages = (Array.isArray(source.languages) ? source.languages : [])
-            .map(normalizeLanguageRecord)
+        this.languages = (Array.isArray(source.languages) ? source.languages : [])
+            .map((record) => normalizeLanguageRecord(record, this.profile))
             .filter(Boolean);
-        this.languages = Array.from(
-            new Map(normalizedLanguages.map((item) => [item.code, item])).values()
-        );
+        this.languages = [...new Map(this.languages.map((item) => [item.code, item])).values()];
 
-        const requestedCurrent = normalizeLanguageCode(
-            source.currentLanguage || sourceProfile.language
-        );
-        if (requestedCurrent && !this.languages.some((item) => item.code === requestedCurrent)) {
-            this.languages.push(normalizeLanguageRecord({
-                code: requestedCurrent,
-                level: levelTag,
-                diagnosticScore: this.profile.diagnosticScore,
-                diagnosticAnswers: this.profile.diagnosticAnswers,
-                levelResult: this.profile.levelResult,
+        const requested = normalizeLanguageCode(source.currentLanguage || sourceProfile.language);
+        if (requested && EF_LANGUAGES[requested] && !this.languages.some((item) => item.code === requested)) {
+            const configuration = EF_LANGUAGES[requested];
+            const migratedRecord = normalizeLanguageRecord({
+                code: requested,
+                name: configuration.name,
+                flag: configuration.flag,
+                country: configuration.country,
+                mentor: configuration.mentor,
+                setupComplete: Boolean(profileResult.completedAt),
+                setupStatus: profileResult.completedAt ? "ready" : "setup-required",
+                learningProfile: {
+                    goal: this.profile.goal,
+                    goalDescription: this.profile.goalDescription,
+                    useCase: this.profile.useCase,
+                    contact: this.profile.contact,
+                    dailyMinutes: this.profile.dailyMinutes,
+                    lifeContext: this.profile.lifeContext,
+                    learningStyle: this.profile.learningStyle,
+                    goalDetails: clone(this.profile.goalDetails)
+                },
+                diagnosticResult: profileResult,
+                diagnosticAnswers: clone(this.profile.diagnosticAnswers),
+                dailyPlan: clone(this.profile.dailyPlan),
                 stats: {}
-            }));
+            }, this.profile);
+            if (migratedRecord) this.languages.push(migratedRecord);
         }
 
-        this.currentLanguage = requestedCurrent || this.languages[0]?.code || "";
+        this.currentLanguage = this.languages.some((item) => item.code === requested)
+            ? requested
+            : this.languages[0]?.code || "";
         this.profile.language = this.currentLanguage;
 
-        const currentRecord = this.getLanguage(this.currentLanguage);
-        if (currentRecord) {
-            const profileResult = normalizeLevelResult(this.profile.levelResult, this.profile.levelTag);
-            if (
-                !currentRecord.levelResult?.completedAt &&
-                profileResult.completedAt &&
-                currentRecord.level === profileResult.cefr
-            ) {
-                currentRecord.levelResult = profileResult;
-                currentRecord.diagnosticScore = this.profile.diagnosticScore;
-                currentRecord.diagnosticAnswers = [...this.profile.diagnosticAnswers];
-            }
+        const active = this.getLanguage();
+        if (active) this.syncProfileCompatibility(active);
 
-            this.profile.levelTag = currentRecord.level;
-            this.profile.levelResult = normalizeLevelResult(currentRecord.levelResult, currentRecord.level);
-            this.profile.diagnosticScore = toFiniteNumber(currentRecord.diagnosticScore, 0);
-            this.profile.diagnosticAnswers = [...currentRecord.diagnosticAnswers];
-        }
-
-        const sourceSettings = isPlainObject(source.settings) ? source.settings : {};
-        const theme = normalizeString(sourceSettings.theme).toLowerCase();
-        this.settings = {
-            ...defaults.settings,
-            ...sourceSettings,
-            theme: THEMES.has(theme) ? theme : defaults.settings.theme
-        };
-
+        const settings = isPlainObject(source.settings) ? source.settings : {};
+        const theme = text(settings.theme).toLowerCase();
+        this.settings = { ...defaults.settings, ...settings, theme: THEMES.has(theme) ? theme : "light" };
         return this;
     }
 
-    set(key, value) {
-        if (!TOP_LEVEL_KEYS.has(key)) {
-            console.warn(`Propriedade desconhecida no estado: ${key}`);
-            return false;
-        }
+    syncProfileCompatibility(record) {
+        const learningProfile = record.learningProfile || createEmptyLanguageProfile(this.profile);
+        this.profile.language = record.code;
+        this.profile.goal = learningProfile.goal;
+        this.profile.goalDescription = learningProfile.goalDescription;
+        this.profile.useCase = learningProfile.useCase;
+        this.profile.contact = learningProfile.contact;
+        this.profile.dailyMinutes = learningProfile.dailyMinutes;
+        this.profile.lifeContext = learningProfile.lifeContext;
+        this.profile.goalDetails = clone(learningProfile.goalDetails);
+        this.profile.journeyId = record.journeyId || "";
+        this.profile.journeyLabel = record.journeyLabel || "";
+        this.profile.levelTag = record.journeyLabel || "";
+        this.profile.level = record.journeyId ? getJourney(record.journeyId).order : 0;
+        this.profile.levelResult = clone(record.diagnosticResult || createEmptyDiagnosticResult());
+        this.profile.diagnosticScore = record.diagnosticResult?.score || 0;
+        this.profile.diagnosticAnswers = clone(record.diagnosticAnswers || []);
+        this.profile.dailyPlan = clone(record.dailyPlan || { review: "", lesson: "", communication: "" });
+    }
 
-        if (key === "profile") {
-            this.initialize({ ...this.toJSON(), profile: value });
-        } else if (key === "languages") {
-            const records = Array.isArray(value) ? value.map(normalizeLanguageRecord).filter(Boolean) : [];
-            this.languages = Array.from(new Map(records.map((item) => [item.code, item])).values());
-            if (this.currentLanguage && !this.getLanguage(this.currentLanguage)) {
-                this.setCurrentLanguage(this.languages[0]?.code || "");
-            }
-        } else if (key === "currentLanguage") {
-            return this.setCurrentLanguage(value);
-        } else if (key === "settings") {
-            this.updateSettings(value);
-        } else if (key === "user") {
-            this.user = isPlainObject(value) ? clone(value) : {};
-        } else if (key === "schemaVersion") {
-            this.schemaVersion = STATE_SCHEMA_VERSION;
-        }
+    set(key, value) {
+        if (!TOP_LEVEL_KEYS.has(key)) return false;
+        if (key === "profile") this.updateProfile(value);
+        else if (key === "languages") this.languages = (Array.isArray(value) ? value : []).map((record) => normalizeLanguageRecord(record, this.profile)).filter(Boolean);
+        else if (key === "currentLanguage") return this.setCurrentLanguage(value);
+        else if (key === "settings") this.updateSettings(value);
+        else if (key === "user") this.user = isPlainObject(value) ? clone(value) : {};
         return true;
     }
 
-    get(key) {
-        return TOP_LEVEL_KEYS.has(key) ? this[key] : undefined;
-    }
+    get(key) { return TOP_LEVEL_KEYS.has(key) ? this[key] : undefined; }
 
     updateProfile(patch = {}) {
         if (!isPlainObject(patch)) return this.profile;
         this.profile = {
             ...this.profile,
             ...patch,
-            goalDetails: patch.goalDetails
-                ? {
-                    ...this.profile.goalDetails,
-                    ...patch.goalDetails,
-                    interests: Array.isArray(patch.goalDetails.interests)
-                        ? patch.goalDetails.interests.map(normalizeString).filter(Boolean)
-                        : this.profile.goalDetails.interests
-                }
-                : this.profile.goalDetails,
-            onboardingProgress: patch.onboardingProgress
-                ? { ...this.profile.onboardingProgress, ...patch.onboardingProgress }
-                : this.profile.onboardingProgress,
-            diagnosticProgress: patch.diagnosticProgress
-                ? {
-                    ...this.profile.diagnosticProgress,
-                    ...patch.diagnosticProgress,
-                    answers: Array.isArray(patch.diagnosticProgress.answers)
-                        ? [...patch.diagnosticProgress.answers]
-                        : this.profile.diagnosticProgress.answers,
-                    scores: Array.isArray(patch.diagnosticProgress.scores)
-                        ? [...patch.diagnosticProgress.scores]
-                        : this.profile.diagnosticProgress.scores
-                }
-                : this.profile.diagnosticProgress,
-            mentor: patch.mentor
-                ? {
-                    ...this.profile.mentor,
-                    ...patch.mentor,
-                    notes: Array.isArray(patch.mentor.notes)
-                        ? [...patch.mentor.notes]
-                        : this.profile.mentor.notes
-                }
-                : this.profile.mentor,
-            learning: patch.learning
-                ? {
-                    ...this.profile.learning,
-                    ...patch.learning,
-                    pendingReviews: Array.isArray(patch.learning.pendingReviews)
-                        ? clone(patch.learning.pendingReviews)
-                        : this.profile.learning.pendingReviews,
-                    weakTopics: Array.isArray(patch.learning.weakTopics)
-                        ? [...patch.learning.weakTopics]
-                        : this.profile.learning.weakTopics,
-                    masteredTopics: Array.isArray(patch.learning.masteredTopics)
-                        ? [...patch.learning.masteredTopics]
-                        : this.profile.learning.masteredTopics
-                }
-                : this.profile.learning,
-            dailyPlan: patch.dailyPlan
-                ? { ...this.profile.dailyPlan, ...patch.dailyPlan }
-                : this.profile.dailyPlan,
-            levelResult: patch.levelResult
-                ? normalizeLevelResult({ ...this.profile.levelResult, ...patch.levelResult }, patch.levelTag || this.profile.levelTag)
-                : this.profile.levelResult,
-            professional: patch.professional
-                ? {
-                    ...this.profile.professional,
-                    ...patch.professional,
-                    progress: isPlainObject(patch.professional.progress)
-                        ? { ...this.profile.professional.progress, ...patch.professional.progress }
-                        : this.profile.professional.progress,
-                    completedModules: Array.isArray(patch.professional.completedModules)
-                        ? [...patch.professional.completedModules]
-                        : this.profile.professional.completedModules,
-                    unlockedModules: Array.isArray(patch.professional.unlockedModules)
-                        ? [...patch.professional.unlockedModules]
-                        : this.profile.professional.unlockedModules
-                }
-                : this.profile.professional,
-            achievements: Array.isArray(patch.achievements)
-                ? clone(patch.achievements)
-                : this.profile.achievements,
-            diagnosticAnswers: Array.isArray(patch.diagnosticAnswers)
-                ? [...patch.diagnosticAnswers]
-                : this.profile.diagnosticAnswers,
-            levelTag: patch.levelTag !== undefined
-                ? normalizeCefr(patch.levelTag, this.profile.levelTag)
-                : this.profile.levelTag
+            goalDetails: patch.goalDetails ? { ...this.profile.goalDetails, ...patch.goalDetails, interests: patch.goalDetails.interests ? stringList(patch.goalDetails.interests) : this.profile.goalDetails.interests } : this.profile.goalDetails,
+            onboardingProgress: patch.onboardingProgress ? { ...this.profile.onboardingProgress, ...patch.onboardingProgress } : this.profile.onboardingProgress,
+            diagnosticProgress: patch.diagnosticProgress ? { ...this.profile.diagnosticProgress, ...patch.diagnosticProgress, answers: patch.diagnosticProgress.answers ? clone(patch.diagnosticProgress.answers) : this.profile.diagnosticProgress.answers, scores: patch.diagnosticProgress.scores ? clone(patch.diagnosticProgress.scores) : this.profile.diagnosticProgress.scores, questionIds: patch.diagnosticProgress.questionIds ? stringList(patch.diagnosticProgress.questionIds) : this.profile.diagnosticProgress.questionIds } : this.profile.diagnosticProgress,
+            levelResult: patch.levelResult ? normalizeDiagnosticResult({ ...this.profile.levelResult, ...patch.levelResult }, patch.journeyId || this.profile.journeyId) : this.profile.levelResult,
+            dailyPlan: patch.dailyPlan ? { ...this.profile.dailyPlan, ...patch.dailyPlan } : this.profile.dailyPlan,
+            mentor: patch.mentor ? { ...this.profile.mentor, ...patch.mentor } : this.profile.mentor,
+            avatar: patch.avatar ? { ...this.profile.avatar, ...patch.avatar, validation: patch.avatar.validation ? { ...this.profile.avatar.validation, ...patch.avatar.validation } : this.profile.avatar.validation } : this.profile.avatar,
+            aiMemory: patch.aiMemory ? { ...this.profile.aiMemory, ...patch.aiMemory, items: patch.aiMemory.items ? clone(patch.aiMemory.items) : this.profile.aiMemory.items, blockedFingerprints: patch.aiMemory.blockedFingerprints ? stringList(patch.aiMemory.blockedFingerprints) : this.profile.aiMemory.blockedFingerprints } : this.profile.aiMemory,
+            learning: patch.learning ? { ...this.profile.learning, ...patch.learning, pendingReviews: patch.learning.pendingReviews ? clone(patch.learning.pendingReviews) : this.profile.learning.pendingReviews, weakTopics: patch.learning.weakTopics ? stringList(patch.learning.weakTopics) : this.profile.learning.weakTopics, masteredTopics: patch.learning.masteredTopics ? stringList(patch.learning.masteredTopics) : this.profile.learning.masteredTopics, recentActivities: patch.learning.recentActivities ? clone(patch.learning.recentActivities).slice(0, 50) : this.profile.learning.recentActivities } : this.profile.learning,
+            achievements: patch.achievements ? clone(patch.achievements) : this.profile.achievements,
+            xpLedger: patch.xpLedger ? clone(patch.xpLedger) : this.profile.xpLedger
         };
         return this.profile;
     }
@@ -468,31 +483,17 @@ class State {
     updateSettings(patch = {}) {
         if (!isPlainObject(patch)) return this.settings;
         const next = { ...this.settings, ...patch };
-        const theme = normalizeString(next.theme).toLowerCase();
+        const theme = text(next.theme).toLowerCase();
         next.theme = THEMES.has(theme) ? theme : this.settings.theme || "light";
         this.settings = next;
         return this.settings;
     }
 
-    updateDailyPlan(plan = {}) {
-        return this.updateProfile({ dailyPlan: plan }).dailyPlan;
-    }
-
-    updateMentor(patch = {}) {
-        return this.updateProfile({ mentor: patch }).mentor;
-    }
-
-    updateLearning(patch = {}) {
-        return this.updateProfile({ learning: patch }).learning;
-    }
-
-    updateLevelResult(patch = {}) {
-        return this.updateProfile({ levelResult: patch }).levelResult;
-    }
-
-    isOnboardingCompleted() {
-        return Boolean(this.profile.onboardingComplete);
-    }
+    updateDailyPlan(plan = {}) { return this.updateProfile({ dailyPlan: plan }).dailyPlan; }
+    updateMentor(patch = {}) { return this.updateProfile({ mentor: patch }).mentor; }
+    updateLearning(patch = {}) { return this.updateProfile({ learning: patch }).learning; }
+    updateLevelResult(patch = {}) { return this.updateProfile({ levelResult: patch }).levelResult; }
+    isOnboardingCompleted() { return Boolean(this.profile.onboardingComplete); }
 
     setCurrentLanguage(language) {
         const code = normalizeLanguageCode(language);
@@ -503,42 +504,30 @@ class State {
         }
         this.currentLanguage = code;
         this.profile.language = code;
+        const record = this.getLanguage(code);
+        if (record) this.syncProfileCompatibility(record);
         return true;
     }
 
     addLanguage(language) {
-        const normalized = normalizeLanguageRecord(language);
+        const normalized = normalizeLanguageRecord(language, this.profile);
         if (!normalized) return null;
         const index = this.languages.findIndex((item) => item.code === normalized.code);
-        if (index >= 0) {
-            const existing = this.languages[index];
-            const hasOwn = (key) => Object.prototype.hasOwnProperty.call(language, key);
-            this.languages[index] = {
-                ...existing,
-                ...normalized,
-                name: hasOwn("name") || hasOwn("label") ? normalized.name : existing.name,
-                flag: hasOwn("flag") ? normalized.flag : existing.flag,
-                mentor: hasOwn("mentor") ? normalized.mentor : existing.mentor,
-                level: hasOwn("level") ? normalized.level : existing.level,
-                xp: hasOwn("xp") ? normalized.xp : existing.xp,
-                progress: hasOwn("progress") ? normalized.progress : existing.progress,
-                diagnosticScore: hasOwn("diagnosticScore")
-                    ? normalized.diagnosticScore
-                    : existing.diagnosticScore,
-                diagnosticAnswers: hasOwn("diagnosticAnswers")
-                    ? [...normalized.diagnosticAnswers]
-                    : existing.diagnosticAnswers,
-                levelResult: hasOwn("levelResult")
-                    ? normalizeLevelResult(normalized.levelResult, normalized.level)
-                    : existing.levelResult,
-                stats: isPlainObject(language.stats)
-                    ? { ...existing.stats, ...normalized.stats }
-                    : existing.stats
-            };
-            return this.languages[index];
+        if (index < 0) {
+            this.languages.push(normalized);
+            return normalized;
         }
-        this.languages.push(normalized);
-        return normalized;
+        const existing = this.languages[index];
+        const merged = normalizeLanguageRecord({ ...existing, ...language }, this.profile);
+        this.languages[index] = merged;
+        return merged;
+    }
+
+    removeLanguage(code) {
+        const normalized = normalizeLanguageCode(code);
+        this.languages = this.languages.filter((item) => item.code !== normalized);
+        if (this.currentLanguage === normalized) this.setCurrentLanguage(this.languages[0]?.code || "");
+        return true;
     }
 
     getLanguage(code = this.currentLanguage) {
@@ -547,16 +536,9 @@ class State {
     }
 
     toJSON() {
-        return clone({
-            schemaVersion: this.schemaVersion,
-            user: this.user,
-            profile: this.profile,
-            languages: this.languages,
-            currentLanguage: this.currentLanguage,
-            settings: this.settings
-        });
+        return clone({ schemaVersion: this.schemaVersion, user: this.user, profile: this.profile, languages: this.languages, currentLanguage: this.currentLanguage, settings: this.settings });
     }
 }
 
 export const state = new State();
-export { STATE_SCHEMA_VERSION, CEFR_LEVELS };
+export { STATE_SCHEMA_VERSION, createEmptyDiagnosticResult, createEmptyLanguageProfile, createEmptyProfessionalState, createEmptyCommunicationState };

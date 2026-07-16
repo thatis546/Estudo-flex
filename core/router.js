@@ -11,10 +11,15 @@ const ONBOARDING_PAGES = new Set([
 const APP_PAGES = new Set([
     "home",
     "languages",
+    "language-setup",
+    "language-diagnostic",
+    "review",
     "profile",
     "passport",
+    "mentor",
     "speaking",
-    "professional"
+    "professional",
+    "professional-study"
 ]);
 
 class Router {
@@ -73,7 +78,7 @@ class Router {
         if (onboardingFields.some((field) => !profile[field])) return "onboarding";
 
         const goals = profile.goalDetails || {};
-        if (!goals.deadline || !goals.frequency || !Array.isArray(goals.interests) || goals.interests.length === 0) {
+        if (!profile.goalDescription || !profile.useCase || !goals.deadline || !goals.frequency || !Array.isArray(goals.interests) || goals.interests.length === 0) {
             return "goals";
         }
 
