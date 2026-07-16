@@ -84,17 +84,30 @@
 }
 
 /* Posicionamentos geométricos nos anéis tracejados */
-.orbit-dot::after,
-.brand-orbit--inner .orbit-satellite { 
-    content: "🇺🇸"; /* Fallback visual para o span.orbit-dot legado */
+.orbit-dot::after {
+    content: "🇧🇷";
     position: absolute;
-    top: -14px; 
-    left: calc(50% - 14px); 
+    top: -14px;
+    left: calc(50% - 14px);
     font-size: 14px;
+}
+
+.brand-orbit--inner .orbit-satellite {
+    top: -14px;
+    left: calc(50% - 14px);
 }
 
 .brand-orbit--outer .orbit-satellite:nth-child(1) { bottom: -14px; left: calc(50% - 14px); }
 .brand-orbit--outer .orbit-satellite:nth-child(2) { top: calc(50% - 14px); right: -14px; }
+
+.welcome-origin {
+    margin: -4px 0 0;
+    color: var(--primary);
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
 
 
 /* -------------------------------------------------------------------------

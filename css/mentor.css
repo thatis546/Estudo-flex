@@ -197,3 +197,25 @@
         padding: 10px 14px;
     }
 }
+
+/* v0.8 — página separada do Mentor em texto */
+.mentor-page { width: min(100% - 2rem, 860px); margin: 0 auto var(--space-xxl); }
+.mentor-page-header { display: flex; justify-content: space-between; gap: var(--space-lg); align-items: start; }
+.mentor-context-card { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--space-md); margin-bottom: var(--space-md); }
+.mentor-context-card > div { display: grid; gap: 5px; min-width: 0; }
+.mentor-context-card strong { overflow-wrap: anywhere; }
+.mentor-chat-shell { display: grid; gap: var(--space-md); padding: var(--space-md); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface-secondary); }
+.mentor-message-list { min-height: 340px; max-height: 58vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 8px; }
+.mentor-message { max-width: 82%; padding: 12px 15px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+.mentor-message--user { align-self: end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.mentor-message--assistant { align-self: start; border-bottom-left-radius: 4px; }
+.mentor-message p { margin: 5px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mentor-empty-state { text-align: center; margin: auto; max-width: 420px; }
+.mentor-empty-state img { width: 90px; }
+.mentor-composer { display: grid; gap: 10px; }
+.mentor-composer-actions { display: flex; justify-content: space-between; gap: 10px; }
+@media (max-width: 640px) {
+    .mentor-page-header { flex-direction: column; }
+    .mentor-context-card { grid-template-columns: 1fr; }
+    .mentor-message { max-width: 92%; }
+}
