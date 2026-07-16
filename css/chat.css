@@ -1,0 +1,298 @@
+/* ==========================================================================
+   Componente: Chat, Mensagens & Mentor IA (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Área de Exibição & Linha do Tempo (Viewport & Timeline)
+   ------------------------------------------------------------------------- */
+.chat-viewport {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background: var(--surface-secondary);
+    overflow: hidden;
+}
+
+.chat-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md, 16px);
+    
+    /* Rolagem e toque otimizados para Mobile */
+    -webkit-overflow-scrolling: touch; 
+    scroll-behavior: smooth;
+    overscroll-behavior: contain; /* Impede pull-to-refresh acidental no Android */
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Estrutura das Mensagens & Aliases de Compatibilidade
+   ------------------------------------------------------------------------- */
+.message-row,
+.message {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-sm, 12px);
+    max-width: 85%; /* Evita preenchimento excessivo em telas de tablets */
+    animation: fadeInUp 0.25s ease-out; /* Usa animação existente em animations.css */
+}
+
+/* Alinhamentos de Direção */
+.message-row.user,
+.message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-row.ai,
+.message.ai {
+    align-self: flex-start;
+}
+
+/* Avatares Integrados */
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background-color: var(--primary-light);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: grid;
+    place-content: center;
+    user-select: none;
+}
+
+.message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Estilização das Bolhas de Texto (Message Bubbles)
+   ------------------------------------------------------------------------- */
+.message-bubble,
+.message {
+    padding: 12px 16px;
+    border-radius: var(--radius-md, 12px);
+    font-size: var(--font-md, 16px);
+    line-height: 1.5;
+    position: relative;
+    box-shadow: var(--shadow);
+    overflow-wrap: anywhere;
+    max-width: 75ch; /* Comprimento de linha ideal para leitura confortável de textos longos */
+}
+
+/* Tratamento específico quando .message age como a própria bolha no JS antigo */
+.message {
+    display: inline-block; /* Sobrescreve flex apenas para blocos de texto puros */
+}
+
+/* Bolha do Usuário */
+.message-row.user .message-bubble,
+.message.user {
+    background: var(--primary);
+    color: #ffffff;
+    border-bottom-right-radius: 6px; /* Equivalente ao --radius-xs planejado */
+}
+
+/* Bolha da IA / Mentor */
+.message-row.ai .message-bubble,
+.message.ai {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 6px;
+}
+
+/* Timestamps de Envio */
+.message-meta {
+    font-size: 11px; /* Equivalente ao --font-2xs planejado */
+    color: var(--muted);
+    margin-top: 4px; /* Equivalente ao --space-2xs planejado */
+    padding: 0 4px;
+    display: block;
+    user-select: none;
+}
+
+.message-row.user .message-meta,
+.message.user .message-meta {
+    text-align: right;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Sugestões de Respostas Rápidas (Quick Replies)
+   ------------------------------------------------------------------------- */
+.quick-replies-container,
+.quick-replies {
+    display: flex;
+    gap: var(--space-xs, 8px);
+    padding: var(--space-xs, 12px) var(--space-md, 16px);
+    background: transparent;
+    overflow-x: auto;
+    white-space: nowrap;
+    width: 100%;
+    scrollbar-width: none; /* Oculta scrollbar padrão */
+}
+
+.quick-replies-container::-webkit-scrollbar,
+.quick-replies::-webkit-scrollbar {
+    display: none;
+}
+
+/* Chips / Botões de Resposta */
+.quick-reply-chip,
+.quick-reply {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    min-height: 36px;
+    
+    background: var(--surface);
+    border: 1px solid var(--primary-light);
+    border-radius: var(--radius-full);
+    
+    color: var(--primary);
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-semibold, 600);
+    text-decoration: none;
+    
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    
+    transition: 
+        background-color var(--transition-fast) ease,
+        color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease,
+        transform var(--transition-fast) ease;
+}
+
+@media (hover: hover) {
+    .quick-reply-chip:hover,
+    .quick-reply:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        transform: translateY(-1px);
+    }
+}
+
+.quick-reply-chip:active,
+.quick-reply:active {
+    transform: scale(0.96);
+}
+
+/* Estado Ativo/Selecionado pelo Usuário */
+.quick-reply-chip.selected,
+.quick-reply.selected {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Área de Entrada de Texto (Composer)
+   ------------------------------------------------------------------------- */
+.chat-input-bar,
+.composer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: var(--space-sm, 12px) var(--space-md, 16px);
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-xs, 8px);
+    width: 100%;
+    
+    /* Respeita a Safe Area do iOS */
+    padding-bottom: calc(var(--space-sm, 12px) + env(safe-area-inset-bottom));
+}
+
+.chat-input-bar textarea,
+.composer textarea {
+    min-height: 40px;
+    max-height: 120px;
+    height: 40px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 12px);
+    resize: none;
+    overflow-y: auto; /* Adicionado para lidar com rolagem interna de mensagens longas */
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Indicador de Digitação (AI Typing Indicator)
+   ------------------------------------------------------------------------- */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 20px;
+    padding: 0 4px;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--muted);
+    border-radius: var(--radius-full);
+    opacity: 0.4;
+    will-change: transform, opacity;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.4;
+    }
+    40% {
+        transform: scale(1.2) translateY(-4px);
+        opacity: 1;
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   7. Acessibilidade & Adaptações
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .message-row,
+    .message {
+        max-width: 90%;
+    }
+    
+    .message-bubble,
+    .message {
+        font-size: var(--font-sm, 15px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .typing-dot {
+        animation: typingFade 1.5s infinite ease-in-out both;
+    }
+    .message-row,
+    .message {
+        animation: none !important;
+    }
+}
+
+@keyframes typingFade {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}

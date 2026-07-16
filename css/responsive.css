@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Estudo Flex — Responsividade e Utilities Globais
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Referência de breakpoints (Documentação do Design System)
+   ------------------------------------------------------------------------- */
+:root {
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+}
+
+/* -------------------------------------------------------------------------
+   2. Containers (Prefixados com ef- para evitar colisões)
+   ------------------------------------------------------------------------- */
+.ef-container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--space-md);
+}
+
+.ef-container--sm { max-width: var(--container-small, 640px); }
+.ef-container--md { max-width: var(--container-medium, 900px); }
+.ef-container--lg { max-width: var(--container-large, 1200px); }
+
+/* -------------------------------------------------------------------------
+   3. Grids e Flex Responsivos
+   ------------------------------------------------------------------------- */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+    width: 100%;
+}
+
+.grid-responsive--compact { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.grid-responsive--wide { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+.flex-wrap-responsive {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+@media (max-width: 576px) {
+    .flex-wrap-responsive { flex-direction: column; align-items: stretch; }
+}
+
+/* -------------------------------------------------------------------------
+   4. Visibilidade e Acessibilidade
+   ------------------------------------------------------------------------- */
+@media (max-width: 767px) { .hide-mobile { display: none !important; } }
+@media (min-width: 768px) { .hide-desktop { display: none !important; } }
+
+.sr-only {
+    position: absolute !important; width: 1px !important; height: 1px !important;
+    padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+}
+
+/* -------------------------------------------------------------------------
+   5. Tipografia Fluida
+   ------------------------------------------------------------------------- */
+.heading-responsive-xl { font-size: clamp(var(--font-xl), 5vw, var(--font-3xl)); line-height: 1.15; }
+.heading-responsive-lg { font-size: clamp(var(--font-lg), 4vw, var(--font-2xl)); line-height: 1.2; }
+.text-responsive { font-size: clamp(var(--font-sm), 2.5vw, var(--font-md)); }
+
+/* -------------------------------------------------------------------------
+   6. Utilitários de Layout
+   ------------------------------------------------------------------------- */
+.full-width { width: 100%; }
+.min-width-0 { min-width: 0; }
+.center-content { margin-inline: auto; }
+
+.stack-sm { display: flex; flex-direction: column; gap: var(--space-sm); }
+.stack-md { display: flex; flex-direction: column; gap: var(--space-md); }
+.stack-lg { display: flex; flex-direction: column; gap: var(--space-lg); }
+
+.text-break { overflow-wrap: anywhere; word-break: break-word; }
+.scroll-x { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+
+/* -------------------------------------------------------------------------
+   7. Interações e Motion
+   ------------------------------------------------------------------------- */
+.touch-target { min-width: 44px; min-height: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   8. Impressão Profissional
+   ------------------------------------------------------------------------- */
+@media print {
+    @page { margin: 16mm; }
+    html, body { background: #ffffff !important; color: #000000 !important; }
+    
+    .no-print, app-header, app-navbar, .bottom-navbar, .professional-action-bar, .speaking-control-panel {
+        display: none !important;
+    }
+
+    :is(.professional-editor-card, .professional-analysis-panel, .professional-context-header, .professional-board-section, .professional-scenario-card, .professional-technical-panel, .speaking-mentor-stage, .speaking-prompt-card, .passport-achievement-card, .profile-header-card, .stat-card) {
+        background: #ffffff !important; color: #000000 !important; box-shadow: none !important; filter: none !important;
+    }
+
+    :is(.professional-container, .speaking-container, .passport-container, .passport-achievements-section) {
+        width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important;
+    }
+
+    article, section, .professional-feedback-card, .passport-achievement-card, .stat-card {
+        break-inside: avoid; page-break-inside: avoid;
+    }
+
+    a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; overflow-wrap: anywhere; }
+    a[href^="#"]::after, a[href^="javascript:"]::after { content: none; }
+}

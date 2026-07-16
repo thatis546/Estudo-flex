@@ -1,0 +1,151 @@
+/* ==========================================================================
+   Base & Comportamentos Globais de Elementos (Estudo Flex)
+   ========================================================================== */
+
+/* --- Configurações de Fundo e Cor do Sistema --- */
+body {
+    background: var(--background);
+    color: var(--text);
+    transition: 
+        background-color var(--transition-normal), 
+        color var(--transition-normal);
+}
+
+/* --- Seleção de Texto Customizada --- */
+::selection {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* --- Suporte para Placeholders Globais --- */
+::placeholder {
+    color: var(--muted);
+    opacity: 1; /* Garante renderização consistente no Firefox */
+}
+
+/* --- Comportamento de Links Nativos --- */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: var(--weight-medium, 500);
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* --- Divisores e Linhas Horizontais --- */
+hr,
+.divider {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: var(--space-xl) 0;
+}
+
+/* --- Proteção de Imagens --- */
+img {
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* --- Redefinição e Normalização de Tabelas --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* --- Transições Globais para Elementos de Formulário e Ação --- */
+button {
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+input,
+textarea,
+select {
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+/* --- Acessibilidade Visual e Foco --- */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+}
+
+/* --- Customização Fina de Barras de Rolagem (Scrollbar) --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--background); /* Cria um espaçamento elegante ao redor do thumb */
+    transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* --- Respeito à Preferência do Usuário (Motion Accessibility) --- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* --- Classes Utilitárias Globais e Estruturais --- */
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+/* Ocultação amigável para leitores de tela (SEO & Acessibilidade) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 9999;
+    transform: translateY(-160%);
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface, #fff);
+    color: var(--text, #20243a);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}

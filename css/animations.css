@@ -1,0 +1,215 @@
+/* ==========================================================================
+   Design System - Animações, Transições & Feedbacks Visuais (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Keyframes (Core de Animações Aceleradas por GPU)
+   ------------------------------------------------------------------------- */
+
+/* Esmaecimento linear */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Deslizamento de baixo para cima (Entrada de cards e seções) */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Entrada vindo do topo (Header, Toasts, Dropdowns) */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Entrada lateral vindo da direita (Foco em mensagens do usuário no Chat) */
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Entrada lateral vindo da esquerda (Foco em mensagens do Mentor no Chat) */
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Zoom elástico sutil (Para badges, conquistas, checkpoints e ícones) */
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Pop elástico acentuado (Ideal para gamificação e feedbacks imediatos) */
+@keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* Flutuação suave no eixo Y (Deixa o planeta 🌍 e ilustrações "vivos") */
+@keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
+}
+
+/* Brilho pulsante radial (Celebrar ganho de XP e estados ativos de IA) */
+@keyframes glow {
+    0% { box-shadow: 0 0 0 0 rgba(91, 92, 235, 0); }
+    50% { box-shadow: 0 0 25px 4px rgba(91, 92, 235, 0.35); }
+    100% { box-shadow: 0 0 0 0 rgba(91, 92, 235, 0); }
+}
+
+/* Rotação contínua 360º (Spinners de carregamento assíncrono) */
+@keyframes spin {
+    from { transform: rotate(0); }
+    to { transform: rotate(360deg); }
+}
+
+/* Skeleton Shimmer (Gradiente deslizante de carregamento) */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Classes Utilitárias de Animação (Para aplicação direta nos componentes)
+   ------------------------------------------------------------------------- */
+.animate-fade        { animation: fadeIn var(--transition-normal) forwards; }
+.animate-fade-up     { animation: fadeInUp var(--transition-slow) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-down  { animation: slideDown var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-right  { animation: fadeInRight var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-left  { animation: slideLeft var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-scale       { animation: scaleIn var(--transition-normal) cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-pop         { animation: pop var(--transition-normal) cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-float       { animation: float 4s infinite ease-in-out; }
+.animate-glow        { animation: glow 2s infinite ease-in-out; }
+.animate-spin        { animation: spin 0.8s infinite linear; }
+
+
+/* -------------------------------------------------------------------------
+   3. Microinterações Físicas Globais (Feedback tátil de toque)
+   ------------------------------------------------------------------------- */
+
+/* Transição all-in-one para propriedades não críticas */
+.transition-all {
+    transition: all var(--transition-normal);
+}
+
+/* Elevação suave ao passar o mouse */
+.hover-lift {
+    transition: transform var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+    transform: translateY(-3px);
+}
+
+/* Zoom responsivo de destaque */
+.hover-scale {
+    transition: transform var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-scale:hover {
+    transform: scale(1.03);
+}
+
+/* Feedback tátil de clique / toque mobile (Física de compressão) */
+.press {
+    transition: transform var(--transition-fast) ease;
+}
+.press:active {
+    transform: scale(0.96);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Elementos Estruturais de Carregamento (Shimmer & Spin)
+   ------------------------------------------------------------------------- */
+.skeleton {
+    background: linear-gradient(
+        90deg, 
+        var(--gray-200) 25%, 
+        var(--gray-100) 50%, 
+        var(--gray-200) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite linear;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
+    user-select: none;
+    pointer-events: none;
+    overflow: hidden; /* Garantia contra vazamento de margens internas */
+}
+
+/* Spinner circular genérico (Classe de utilidade visual) */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--primary);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s infinite linear;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Acessibilidade (Respeito à Preferência do Usuário por Movimentos Reduzidos)
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade,
+    .animate-fade-up,
+    .animate-slide-down,
+    .animate-fade-right,
+    .animate-slide-left,
+    .animate-scale,
+    .animate-pop,
+    .animate-float,
+    .animate-glow,
+    .animate-spin,
+    .skeleton,
+    .spinner {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .hover-lift:hover,
+    .hover-scale:hover,
+    .press:active {
+        transform: none;
+    }
+}

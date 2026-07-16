@@ -1,0 +1,402 @@
+/* ==========================================================================
+   Página: Treinamento de Fala e IA de Conversação (Estudo Flex - Versão Final)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Layout do Palco de Conversação (The Speaking Stage)
+   ------------------------------------------------------------------------- */
+.speaking-container {
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto var(--space-xxl) auto;
+    padding: 0 var(--space-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xl);
+    contain: layout style;
+}
+
+/* Painel de Exibição do Mentor de IA */
+.speaking-container .speaking-mentor-stage {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    padding: var(--space-xl) var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Avatar do Mentor com Halos de Voz Pulsantes */
+.speaking-container .speaking-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.speaking-container .speaking-avatar {
+    width: 110px;
+    height: 110px;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-full);
+    border: 4px solid var(--primary-light);
+    object-fit: cover;
+    z-index: 2;
+    position: relative;
+}
+
+/* Halos de pulsação que se ativam quando o mentor fala */
+.speaking-container .speaking-avatar-wrapper::before,
+.speaking-container .speaking-avatar-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: var(--radius-full);
+    border: 4px solid var(--primary);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Estado: Mentor falando (Ativado via JS) */
+.speaking-container .speaking-avatar-wrapper.is-speaking::before {
+    animation: voicePulse 2s var(--ease-out) infinite;
+}
+
+.speaking-container .speaking-avatar-wrapper.is-speaking::after {
+    animation: voicePulse 2s var(--ease-out) infinite 1s;
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Transcrições de Texto e Análise Acessível de Pronúncia
+   ------------------------------------------------------------------------- */
+.speaking-container .speaking-prompt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.speaking-container .speaking-label {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-bold);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.speaking-container .speaking-target-text {
+    font-size: var(--font-lg);
+    line-height: 1.5;
+    color: var(--text);
+    font-weight: var(--weight-semibold);
+}
+
+/* Área de feedback fonético detalhado */
+.speaking-container .speaking-analysis-text {
+    font-size: var(--font-md);
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--surface-secondary);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border);
+}
+
+/* Tokens de Pronúncia com Acessibilidade para Daltônicos */
+.speaking-container .pronounce-word {
+    display: inline-block;
+    padding: 0 2px;
+    border-bottom: 2px solid transparent;
+    transition: color var(--transition-fast) var(--ease-out);
+}
+
+/* Verde: Correto */
+.speaking-container .pronounce-word--correct {
+    color: var(--success);
+    border-color: var(--success);
+    font-weight: var(--weight-bold);
+}
+
+/* Amarelo: Hesitação */
+.speaking-container .pronounce-word--warning {
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+/* Vermelho + Sublinhado Ondulado (Não depende apenas de cor) */
+.speaking-container .pronounce-word--error {
+    color: var(--danger);
+    text-decoration: wavy underline;
+    text-decoration-color: var(--danger);
+    text-underline-offset: 4px;
+    background: rgba(212, 84, 106, 0.05);
+}
+
+/* Modo detalhado: Inclui símbolos textuais nos acertos e desvios */
+.speaking-container .speaking-analysis-text.is-detailed .pronounce-word--correct::after {
+    content: " ✓";
+    font-size: 0.75em;
+}
+
+.speaking-container .speaking-analysis-text.is-detailed .pronounce-word--warning::after {
+    content: " ~";
+    font-size: 0.75em;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Waveform: Preparada para Simulação e Captura Real (Web Audio API)
+   ------------------------------------------------------------------------- */
+.speaking-container .speaking-waveform-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 48px;
+    width: 100%;
+    max-width: 280px;
+}
+
+.speaking-container .waveform-bar {
+    width: 4px;
+    height: 8px;
+    background: var(--gray-300);
+    border-radius: var(--radius-full);
+    transition: height 0.1s ease-in-out, background-color var(--transition-normal);
+}
+
+/* Modo A: Onda Simulada (Fallback / Espera / MVP) */
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar {
+    background: var(--primary);
+    animation: barBounce 1.2s ease-in-out infinite alternate;
+}
+
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(1) { animation-delay: 0.1s; }
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(2) { animation-delay: 0.3s; }
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(3) { animation-delay: 0.5s; }
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(4) { animation-delay: 0.2s; }
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(5) { animation-delay: 0.4s; }
+.speaking-container .speaking-waveform-container.is-simulated .waveform-bar:nth-child(6) { animation-delay: 0.6s; }
+
+/* Modo B: Onda Real (Web Audio API ativa, desativa keyframes para controle do JS) */
+.speaking-container .speaking-waveform-container.is-live .waveform-bar {
+    background: var(--primary);
+    animation: none;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Botão de Controle de Voz (Push-to-Talk) & Estados de Foco
+   ------------------------------------------------------------------------- */
+.speaking-container .speaking-control-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.speaking-container .mic-button {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--gradient-primary);
+    color: #ffffff;
+    font-size: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(91, 92, 235, 0.35);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    transition: 
+        transform var(--transition-fast) var(--ease-spring),
+        box-shadow var(--transition-fast) var(--ease-out),
+        opacity var(--transition-fast) var(--ease-out);
+}
+
+/* Foco de Acessibilidade Resistente */
+.speaking-container .mic-button:focus-visible {
+    outline: 3px solid rgba(91, 92, 235, 0.35);
+    outline-offset: 5px;
+}
+
+.speaking-container .mic-button:active {
+    transform: scale(0.95);
+}
+
+/* Estado Desabilitado Absoluto */
+.speaking-container .mic-button:disabled,
+.speaking-container .mic-button.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Anel de Alerta de Gravação Ativa */
+.speaking-container .mic-button-ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--danger);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.speaking-container .speaking-status-text {
+    font-size: var(--font-xs);
+    font-weight: var(--weight-bold);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color var(--transition-fast) var(--ease-out);
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Estados Orquestrados do Painel Central (.speaking-control-panel)
+   ------------------------------------------------------------------------- */
+
+/* Estado A: Gravando / Ouvindo o Usuário */
+.speaking-container .speaking-control-panel.is-recording .mic-button {
+    background: var(--gradient-danger, linear-gradient(135deg, var(--danger), #b93650));
+    box-shadow: 0 8px 24px rgba(212, 84, 106, 0.35);
+}
+
+.speaking-container .speaking-control-panel.is-recording .mic-button-ripple {
+    animation: micRipple 1.8s var(--ease-out) infinite;
+}
+
+.speaking-container .speaking-control-panel.is-recording .speaking-status-text {
+    color: var(--danger);
+}
+
+/* Estado B: Processando Voz / Aguardando IA */
+.speaking-container .speaking-control-panel.is-processing .mic-button {
+    cursor: wait;
+    opacity: 0.75;
+}
+
+/* Estado C: Erro na operação (Microfone negado / Sem internet) */
+.speaking-container .speaking-control-panel.has-error .speaking-status-text {
+    color: var(--danger);
+}
+
+/* Estado D: Pronto para nova tentativa */
+.speaking-container .speaking-control-panel.is-ready .speaking-status-text {
+    color: var(--success);
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Animações e Físicas Globais
+   ------------------------------------------------------------------------- */
+@keyframes voicePulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes barBounce {
+    0% { height: 8px; }
+    100% { height: 42px; }
+}
+
+@keyframes micRipple {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.5); opacity: 0; }
+}
+
+
+/* -------------------------------------------------------------------------
+   7. Responsividade e Interações Limpas
+   ------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+    .speaking-container .mic-button:not(:disabled):hover {
+        transform: scale(1.05);
+        box-shadow: 0 12px 28px rgba(91, 92, 235, 0.45);
+    }
+}
+
+@media (max-width: 480px) {
+    .speaking-container .speaking-mentor-stage {
+        padding: var(--space-lg) var(--space-md);
+        border-radius: var(--radius-md);
+    }
+
+    .speaking-container .speaking-avatar {
+        width: 90px;
+        height: 90px;
+    }
+
+    .speaking-container .mic-button {
+        width: 72px;
+        height: 72px;
+        font-size: 28px;
+    }
+
+    .speaking-container .speaking-target-text {
+        font-size: var(--font-md);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .speaking-container .speaking-avatar-wrapper::before,
+    .speaking-container .speaking-avatar-wrapper::after,
+    .speaking-container .speaking-waveform-container.is-simulated .waveform-bar,
+    .speaking-container .mic-button-ripple {
+        animation: none !important;
+    }
+    .speaking-container .mic-button {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   8. Prévia da gravação real
+   ------------------------------------------------------------------------- */
+.speaking-container .speaking-recording-preview {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.speaking-container .speaking-recording-preview[hidden] {
+    display: none !important;
+}
+
+.speaking-container .speaking-recording-preview audio {
+    width: 100%;
+}
+
+.speaking-container .speaking-recording-preview small {
+    color: var(--muted);
+}
+
+.speaking-container .speaking-analysis-text small {
+    display: block;
+    margin-top: var(--space-xs);
+    color: var(--muted);
+    font-size: var(--font-xs);
+}

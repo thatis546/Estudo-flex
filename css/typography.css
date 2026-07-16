@@ -1,0 +1,143 @@
+/* ==========================================================================
+   Sistema Tipográfico Global (Estudo Flex - Versão Final 10/10)
+   ========================================================================== */
+
+/* --- IMPORTANTE: Lembre-se de carregar a fonte Inter via <link> no head do seu HTML! --- */
+
+/* --- 1. Hierarquia de Títulos (Headings & Clones de Classes) --- */
+h1, .h1 {
+    font-size: var(--font-3xl);
+    font-weight: var(--weight-extrabold);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+h2, .h2 {
+    font-size: var(--font-2xl);
+    font-weight: var(--weight-bold);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+h3, .h3 {
+    font-size: var(--font-xl);
+    font-weight: var(--weight-semibold);
+    line-height: 1.35;
+    color: var(--text);
+}
+
+h4, .h4 {
+    font-size: var(--font-lg);
+    font-weight: var(--weight-semibold);
+    line-height: 1.4;
+    color: var(--text);
+}
+
+h5, .h5 {
+    font-size: var(--font-md);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    color: var(--text);
+}
+
+h6, .h6 {
+    font-size: var(--font-sm);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+}
+
+/* --- 2. Parágrafos e Textos de Suporte --- */
+p {
+    font-size: var(--font-md);
+    line-height: 1.6;
+    color: var(--text);
+    max-width: 70ch; /* Conforto visual máximo: evita fadiga ocular ao ler explicações longas do Mentor */
+}
+
+/* Links embutidos contextualmente em parágrafos */
+p a {
+    font-weight: var(--weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+small, 
+.small-text {
+    font-size: var(--font-sm);
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+/* --- 3. Componentes Especiais de Texto --- */
+
+/* Citações e blocos explicativos (Ideais para retornos detalhados da IA ou do Mentor) */
+blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: var(--space-md);
+    margin: var(--space-md) 0;
+    color: var(--muted);
+    font-style: italic;
+    background: var(--surface-secondary);
+    padding-top: var(--space-sm);
+    padding-bottom: var(--space-sm);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* Eyebrows (Introdução de títulos com propósito) */
+.eyebrow {
+    display: inline-block;
+    font-size: var(--font-2xs);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+    margin-bottom: var(--space-xs);
+}
+
+/* Elementos de Código e Sintaxe (Perfeito para exemplos práticos de idiomas ou marcações) */
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    background: var(--surface-secondary);
+    color: var(--danger); /* Contraste elegante para blocos de código */
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+}
+
+/* Itens de lista ordenados/não ordenados */
+li {
+    font-size: var(--font-md);
+    line-height: 1.6;
+}
+
+/* --- 4. Classes Utilitárias Globais de Texto --- */
+
+/* Cores de Texto */
+.text-muted { color: var(--muted); }
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+
+/* Alinhamento */
+.text-center { text-align: center; }
+.text-left   { text-align: left; }
+.text-right  { text-align: right; }
+.text-justify { text-align: justify; }
+
+/* Pesos de Fonte (Font Weights) */
+.font-regular { font-weight: var(--weight-regular); }
+.font-medium  { font-weight: var(--weight-medium); }
+.font-semibold { font-weight: var(--weight-semibold); }
+.font-bold     { font-weight: var(--weight-bold); }
+
+/* Transformações Visuais */
+.italic { font-style: italic; }
+.uppercase { text-transform: uppercase; }
+.tracking-wide { letter-spacing: 0.08em; }

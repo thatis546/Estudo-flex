@@ -1,0 +1,160 @@
+/* ==========================================================================
+   Componente: Header / Topbar (Estudo Flex)
+   ========================================================================== */
+
+/* 1. Estruturação do Container Pai (Header) */
+.header {
+    height: 64px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    transition: 
+        background-color var(--transition-normal),
+        box-shadow var(--transition-normal);
+}
+
+/* 2. Conteúdo Interno com Alinhamento e Padding Fino */
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding-inline: var(--space-lg);
+    gap: var(--space-md);
+}
+
+/* 3. Lado Esquerdo (Navegação/Voltar e Título) */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 0; /* Permite que o flexbox respeite o estreitamento do texto */
+}
+
+.header-title {
+    font-size: var(--font-lg);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    flex: 1;
+    min-width: 0; /* Evita quebra de fluxo do flexbox */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 4. Lado Direito (Ações, Gamificação e Perfil) */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+/* 5. Subcomponentes: Badges de Gamificação e Idioma */
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: var(--weight-semibold);
+    color: var(--text);
+    white-space: nowrap;
+    transition: 
+        background-color var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.header-badge:hover {
+    background: var(--surface-secondary); /* Usa tokens semânticos existentes */
+    border-color: var(--border);
+}
+
+/* Badge de XP com destaque suave da cor primária */
+.header-badge--xp {
+    background: var(--primary-light);
+    border-color: transparent;
+    color: var(--primary);
+}
+
+/* 6. Avatar do Usuário (Toque Ergonômico de 40px) */
+.header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0; /* Impede achatamento em resoluções menores */
+    transition: border-color var(--transition-fast);
+}
+
+.header-avatar:hover {
+    border-color: var(--primary);
+}
+
+/* 7. Botões de Ação do Header (Toque Acessível de 44px conforme Apple/Google) */
+.header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    color: var(--muted);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    transition: 
+        background var(--transition-fast),
+        color var(--transition-fast),
+        transform var(--transition-fast);
+}
+
+.header-btn:hover {
+    background: var(--surface-secondary);
+    color: var(--text);
+}
+
+/* Feedback tátil físico ativo no clique do botão */
+.header-btn:active {
+    transform: scale(0.95);
+}
+
+/* Acessibilidade de foco para navegação por teclado */
+.header-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Destaque estético do Mentor IA */
+.header-btn--mentor {
+    color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 1px rgba(91, 92, 235, 0.08);
+}
+
+.header-btn--mentor:hover {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* 8. Ajustes Responsivos para Telas Mobile */
+@media (max-width: 480px) {
+    .header-content {
+        padding-inline: var(--space-md); /* Suaviza o recuo lateral em celulares */
+    }
+    .header-right {
+        gap: var(--space-xs); /* Compacta os elementos à direita */
+    }
+}
+
+@media (max-width: 359px) {
+    .header-badge {
+        padding: var(--space-xs) var(--space-xs);
+    }
+    .header-badge span {
+        display: none; /* Esconde texto descritivo e preserva ícones/números */
+    }
+}

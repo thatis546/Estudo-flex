@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Layout, Estrutura do App Shell & Containers (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. App Shell (O Container Pai de Todo o Ecossistema)
+   ------------------------------------------------------------------------- */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;   /* Fallback robusto para navegadores e Androids antigos */
+    min-height: 100dvh;  /* Viewport dinâmica para navegadores móveis modernos */
+    max-width: var(--container-small, 820px);
+    margin: 0 auto;
+    background: var(--surface);
+    position: relative;
+    box-shadow: var(--shadow);
+}
+
+/* Modo Simulador de App Premium (Desktop) */
+@media (min-width: 480px) {
+    .app-shell {
+        max-width: 430px;
+        min-height: 85vh;
+        margin: 5vh auto;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   2. Área de Conteúdo Principal & Containers
+   ------------------------------------------------------------------------- */
+main {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding: var(--space-lg);
+    
+    /* Rolagem inercial nativa no iOS */
+    -webkit-overflow-scrolling: touch; 
+}
+
+/* Container de conteúdo ergonômico moderno */
+.container {
+    width: min(100%, var(--container-chat, 720px));
+    margin-inline: auto;
+}
+
+/* Estrutura das Telas internas (Screens) */
+.screen {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    width: 100%;
+    min-height: 100%;
+}
+
+/* -------------------------------------------------------------------------
+   3. Sincronização Lógica com o Router (Atríbuto Hidden)
+   ------------------------------------------------------------------------- */
+/* Remove qualquer herança de display quando o elemento está logicamente oculto */
+[hidden],
+.hidden {
+    display: none !important;
+}
+
+/* Força a árvore de telas do Router a herdar flexbox ao serem ativadas */
+[data-page]:not([hidden]),
+ef-welcome:not([hidden]),
+ef-onboarding:not([hidden]),
+ef-goals:not([hidden]),
+ef-level-test:not([hidden]),
+ef-finish:not([hidden]),
+ef-home:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    animation: fadeIn var(--transition-normal) ease-in-out;
+}
+
+/* -------------------------------------------------------------------------
+   4. Barras Estruturais Estáticas (Topbar & Bottombar)
+   ------------------------------------------------------------------------- */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+    padding: 0 var(--space-lg);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-header, 200);
+    
+    /* Respeito à Safe Area superior (notch e câmeras integradas) */
+    padding-top: env(safe-area-inset-top);
+}
+
+.bottombar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 72px;
+    padding: 0 var(--space-md);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-navbar, 100);
+    
+    /* Respeito à Safe Area inferior (barra de gestos móveis) */
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* -------------------------------------------------------------------------
+   5. Componentes de Controle de Fluxo Globais
+   ------------------------------------------------------------------------- */
+
+/* Container de botões de ação e fluxo de telas */
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+    width: 100%;
+}
+
+/* Painel Lateral Deslizante do Mentor IA (Sprint 6) */
+.mentor-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 360px;
+    max-width: 100%;
+    height: 100%;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    z-index: var(--z-modal, 400); /* Integrado à escala z-index global */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--transition-normal) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Camada traseira de bloqueio e desfoque (Overlay) */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay, rgba(32, 36, 58, 0.45));
+    backdrop-filter: blur(4px); /* Adiciona um acabamento premium moderno */
+    z-index: var(--z-overlay, 300);
+}
+
+/* Sistema Global de Notificações Rápidas (Toast) */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: var(--space-xl);
+    transform: translateX(-50%) translateY(20px);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--gray-900);
+    color: #ffffff;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    font-size: var(--font-sm);
+    font-weight: var(--weight-medium);
+    opacity: 0;
+    pointer-events: none;
+    transition: 
+        opacity var(--transition-normal), 
+        transform var(--transition-normal) cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    z-index: var(--z-toast, 500);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+/* -------------------------------------------------------------------------
+   6. Utilitários Estruturais de Alinhamento e Grid
+   ------------------------------------------------------------------------- */
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.flex-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+}
+
+@media (max-width: 380px) {
+    .grid-2-cols {
+        grid-template-columns: 1fr;
+    }
+}

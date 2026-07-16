@@ -1,0 +1,250 @@
+/* ==========================================================================
+   Componente: Toasts, Alertas Dinâmicos e Legados (Estudo Flex)
+   ========================================================================== */
+
+/* Declaração de tokens locais específicos para prevenção de quebras */
+:root {
+    --danger-light: #fdecec;
+    --z-toast: 9999;
+}
+
+/* -------------------------------------------------------------------------
+   1. Container de Posicionamento (Toast Stack)
+   ------------------------------------------------------------------------- */
+.toast-container {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    padding: var(--space-md, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs, 8px);
+    z-index: var(--z-toast);
+    pointer-events: none; /* Permite interações na tela por trás do container vazio */
+    
+    /* Respeita a área física de notch/câmeras em aparelhos modernos */
+    padding-top: calc(var(--space-md, 16px) + env(safe-area-inset-top));
+}
+
+.toast-container--bottom {
+    top: auto;
+    bottom: 0;
+    padding-bottom: calc(var(--space-xl, 72px) + env(safe-area-inset-bottom));
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Compatibilidade Legada (#toast) & Nova Estrutura (.toast)
+   ------------------------------------------------------------------------- */
+#toast,
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 12px);
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    font-size: var(--font-sm, 14px);
+    
+    /* Restaura o clique individual no toast */
+    pointer-events: auto; 
+    
+    /* Isolamento de renderização e aceleração de GPU */
+    will-change: transform, opacity;
+    contain: layout paint; 
+}
+
+/* Comportamento do #toast clássico usado no JS antigo */
+#toast {
+    position: fixed;
+    top: calc(var(--space-md, 16px) + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 420px;
+    z-index: var(--z-toast);
+    
+    /* Estado inicial invisível */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast) ease;
+}
+
+/* Ativação do toast legado via classe .show do JS */
+#toast.show {
+    opacity: 1;
+    pointer-events: auto;
+    animation: toastIn 0.35s cubic-bezier(0.21, 1.02, 0.43, 1.01) forwards;
+}
+
+/* Estado de Saída para múltiplos toasts novos */
+.toast.is-leaving {
+    animation: fadeOut 0.25s ease-in forwards;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Subcomponentes Internos (Novos Toasts)
+   ------------------------------------------------------------------------- */
+
+/* Ícone de status */
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+/* Área de Texto */
+.toast-content {
+    flex: 1;
+    min-width: 0; /* Previne estouro de layout flex com textos longos */
+}
+
+.toast-title {
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--text);
+    line-height: 1.3;
+}
+
+.toast-message {
+    font-size: var(--font-xs, 12px);
+    color: var(--muted);
+    line-height: 1.4;
+    margin-top: 1px;
+}
+
+/* Botão de Fechar */
+.toast-close {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm, 8px); /* Substituído radius-xs inexistente */
+    transition: 
+        background-color var(--transition-fast) ease,
+        color var(--transition-fast) ease;
+}
+
+.toast-close:hover {
+    background: var(--surface-secondary);
+    color: var(--text);
+}
+
+.toast-close:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.toast-close svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Temas Semânticos de Feedback
+   ------------------------------------------------------------------------- */
+
+/* Tema: Sucesso */
+.toast--success,
+#toast.success { /* Adicionado mapeamento para classe legado .success */
+    border-left: 4px solid var(--accent);
+}
+.toast--success .toast-icon {
+    background: color-mix(in srgb, var(--accent) 12%, white);
+    color: var(--accent);
+}
+
+/* Tema: Erro / Perigo */
+.toast--danger,
+#toast.error { /* Adicionado mapeamento para classe legado .error */
+    border-left: 4px solid var(--danger);
+}
+.toast--danger .toast-icon {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+/* Tema: Alerta / Atenção */
+.toast--warning {
+    border-left: 4px solid #ff9500;
+}
+.toast--warning .toast-icon {
+    background: rgba(255, 149, 0, 0.1);
+    color: #ff9500;
+}
+
+/* Tema: Informativo */
+.toast--info {
+    border-left: 4px solid var(--primary);
+}
+.toast--info .toast-icon {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Animação de Saída Local (Fallback Seguro)
+   ------------------------------------------------------------------------- */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.95);
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Responsividade & Acessibilidade
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .toast-container {
+        width: 100%;
+        padding-left: var(--space-sm, 12px);
+        padding-right: var(--space-sm, 12px);
+    }
+
+    #toast,
+    .toast {
+        padding: 12px;
+        border-radius: var(--radius-sm, 8px);
+    }
+    
+    #toast {
+        width: calc(100% - 24px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #toast.show,
+    .toast {
+        animation: fadeIn 0.2s ease-out forwards;
+    }
+    .toast.is-leaving {
+        animation: fadeOut 0.2s ease-out forwards;
+    }
+}

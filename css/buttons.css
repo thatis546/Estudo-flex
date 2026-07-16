@@ -1,0 +1,308 @@
+/* ==========================================================================
+   Componente: Botões, Gatilhos & Aliases de Compatibilidade (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Base & Estrutura Geral
+   ------------------------------------------------------------------------- */
+.btn,
+.primary,
+.secondary,
+.danger,
+.success,
+.ghost,
+.text-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs, 8px);
+    
+    /* Ergonomia Móvel: Toque mínimo recomendado de 48px */
+    min-height: 48px;
+    padding: var(--space-xs, 12px) var(--space-lg, 24px);
+    
+    border: 1px solid transparent;
+    border-radius: var(--radius-md, 12px);
+    
+    font-size: var(--font-md, 1rem);
+    font-weight: var(--weight-bold, 700);
+    text-align: center;
+    text-decoration: none !important;
+    white-space: nowrap;
+    
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Transição unificada para alta performance */
+    transition: all var(--transition-fast);
+}
+
+/* Microinteração de clique com física realista de deslocamento e compressão */
+.btn:active,
+.primary:active,
+.secondary:active,
+.danger:active,
+.success:active,
+.ghost:active {
+    transform: translateY(1px) scale(0.98);
+}
+
+/* Foco de acessibilidade visível para navegação física por teclado */
+.btn:focus-visible,
+.primary:focus-visible,
+.secondary:focus-visible,
+.danger:focus-visible,
+.success:focus-visible,
+.ghost:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Sizes (Escala de Dimensões)
+   ------------------------------------------------------------------------- */
+
+/* Compacto / Pequeno */
+.btn-sm,
+.compact {
+    min-height: 38px;
+    padding: var(--space-xs, 8px) var(--space-md, 16px);
+    font-size: var(--font-xs, 0.75rem);
+    border-radius: var(--radius-sm, 8px);
+}
+
+/* Largura Total (Responsividade Mobile) */
+.btn-block,
+.full {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Colors (Variantes de Cores & Hierarquia)
+   ------------------------------------------------------------------------- */
+
+/* Variante Primária (Destaque Principal) */
+.btn-primary,
+.primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+@media (hover: hover) {
+    .btn-primary:hover,
+    .primary:hover {
+        background: var(--primary-hover);
+    }
+}
+
+/* Variante Secundária (Ações Complementares) */
+.btn-secondary,
+.secondary {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+@media (hover: hover) {
+    .btn-secondary:hover,
+    .secondary:hover {
+        background: var(--primary);
+        color: #ffffff;
+    }
+}
+
+/* Variante Outline / Borda (Neutro ou Cancelamento) */
+.btn-outline {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+@media (hover: hover) {
+    .btn-outline:hover {
+        background: var(--surface-secondary);
+        border-color: var(--muted);
+    }
+}
+
+/* Variante Sucesso (Feedback de Conclusão / XP na Home) */
+.btn-success,
+.success {
+    background: var(--accent); /* Cor verde-esmeralda ativa */
+    color: #ffffff;
+}
+
+@media (hover: hover) {
+    .btn-success:hover,
+    .success:hover {
+        opacity: 0.9;
+    }
+}
+
+/* Variante Perigo (Ações Críticas / Sair) */
+.btn-danger,
+.danger {
+    background: var(--danger-light, #fcecec); /* Fallback seguro adicionado */
+    color: var(--danger);
+}
+
+@media (hover: hover) {
+    .btn-danger:hover,
+    .danger:hover {
+        background: var(--danger);
+        color: #ffffff;
+    }
+}
+
+/* Variante Ghost (Sem fundo, cor ativa - Ideal para o Mentor) */
+.btn-ghost,
+.ghost {
+    background: none;
+    color: var(--primary);
+}
+
+@media (hover: hover) {
+    .btn-ghost:hover,
+    .ghost:hover {
+        background: var(--primary-light);
+    }
+}
+
+/* Variante de Texto Puro (Link Like) */
+.btn-text,
+.text-btn {
+    background: none;
+    padding: 0;
+    min-height: auto;
+    color: var(--muted);
+    border-radius: 0;
+}
+
+@media (hover: hover) {
+    .btn-text:hover,
+    .text-btn:hover {
+        color: var(--text);
+        text-decoration: underline !important;
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Icon (Suporte a Ícones Internos e Botões Circulares)
+   ------------------------------------------------------------------------- */
+
+/* Redimensionamento padrão para SVGs embutidos em botões */
+.btn svg,
+.primary svg,
+.secondary svg,
+.danger svg,
+.success svg,
+.ghost svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Botão Redondo Exclusivo para Ícone (Icon-Only Button) */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    overflow: hidden; /* Evita quebra se o ícone extrapolar o círculo */
+    flex-shrink: 0;
+}
+
+@media (hover: hover) {
+    .btn-icon:hover {
+        background: var(--border);
+        color: var(--primary);
+    }
+}
+
+.btn-icon-sm {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. States (Estados Lógicos e Bloqueios)
+   ------------------------------------------------------------------------- */
+
+/* Estado Geral Desabilitado (Aplica-se a todas as variantes e aliases) */
+.btn:disabled,
+.btn.disabled,
+.primary:disabled,
+.primary.disabled,
+.secondary:disabled,
+.secondary.disabled,
+.danger:disabled,
+.danger.disabled,
+.success:disabled,
+.success.disabled,
+.ghost:disabled,
+.ghost.disabled {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border) !important;
+    color: var(--muted) !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: none;
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Loading (Processamento Assíncrono da IA)
+   ------------------------------------------------------------------------- */
+.btn-loading {
+    position: relative;
+    color: transparent !important; /* Oculta o texto para manter o tamanho visual */
+    pointer-events: none;
+    cursor: wait;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: calc(50% - 10px);
+    left: calc(50% - 10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff; /* Fica visível sobre fundos primários e escuros */
+    border-radius: var(--radius-full);
+    animation: spin 0.8s infinite linear;
+}
+
+/* Adaptação de cor do spinner para variantes de fundo claro */
+.btn-secondary.btn-loading::after,
+.secondary.btn-loading::after,
+.btn-outline.btn-loading::after,
+.btn-ghost.btn-loading::after,
+.ghost.btn-loading::after {
+    border-color: rgba(91, 92, 235, 0.2);
+    border-top-color: var(--primary);
+}
+
+
+/* -------------------------------------------------------------------------
+   7. Utilities (Ajustes Rápidos de Botão)
+   ------------------------------------------------------------------------- */
+.btn-no-transition {
+    transition: none !important;
+}

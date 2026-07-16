@@ -1,0 +1,474 @@
+/* ==========================================================================
+   Componente: Telas de Fluxo, Onboarding e Elementos de Marca (Estudo Flex)
+   ========================================================================== */
+
+/* Declaração de tokens e dependências locais específicas */
+:root {
+    --radius-lg: 24px;
+    --danger-light: #fdecec;
+}
+
+/* -------------------------------------------------------------------------
+   1. Brand, Órbitas e Efeitos de Boas-Vindas (welcome.css)
+   ------------------------------------------------------------------------- */
+.brand-orbit,
+.brand-orbit-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: var(--space-lg, 24px) auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    contain: layout style;
+}
+
+/* Globo Central (Logo / Marca) */
+.brand-globe {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--primary) 0%, #3a3bc4 100%);
+    border-radius: var(--radius-full, 999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: #ffffff;
+    box-shadow: 0 8px 24px rgba(91, 92, 235, 0.3);
+    z-index: 2;
+    animation: pulse 3s infinite ease-in-out;
+}
+
+/* Aliases para suportar as órbitas dinâmicas geradas no JS antigo */
+.orbit-dot,
+.brand-orbit--inner,
+.brand-orbit--outer {
+    position: absolute;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-full, 999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Órbita Interna / Primária */
+.orbit-dot,
+.brand-orbit--inner {
+    width: 130px;
+    height: 130px;
+    animation: spin 20s linear infinite;
+}
+
+/* Órbita Externa (Caso exista no HTML moderno) */
+.brand-orbit--outer {
+    width: 190px;
+    height: 190px;
+    animation: spin 35s linear infinite reverse;
+}
+
+/* Satélites de Bandeiras / Idiomas */
+.orbit-satellite {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full, 999px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: var(--shadow);
+}
+
+/* Posicionamentos geométricos nos anéis tracejados */
+.orbit-dot::after,
+.brand-orbit--inner .orbit-satellite { 
+    content: "🇺🇸"; /* Fallback visual para o span.orbit-dot legado */
+    position: absolute;
+    top: -14px; 
+    left: calc(50% - 14px); 
+    font-size: 14px;
+}
+
+.brand-orbit--outer .orbit-satellite:nth-child(1) { bottom: -14px; left: calc(50% - 14px); }
+.brand-orbit--outer .orbit-satellite:nth-child(2) { top: calc(50% - 14px); right: -14px; }
+
+
+/* -------------------------------------------------------------------------
+   2. Containers de Onboarding & Welcome (onboarding.css)
+   ------------------------------------------------------------------------- */
+.welcome-container,
+.onboarding-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-lg, 24px) var(--space-md, 16px);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    gap: var(--space-lg, 24px);
+    animation: fadeInUp var(--transition-normal) ease-out;
+}
+
+/* Welcome, Finish & Journey Cards (Herdando comportamento de cartões consistentes) */
+.welcome-card,
+.finish-card,
+.journey-card {
+    background: var(--surface);
+    padding: var(--space-lg, 24px);
+    border-radius: var(--radius, 12px);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.welcome-card {
+    background: linear-gradient(135deg, var(--surface) 50%, var(--primary-light) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 12px);
+    text-align: left;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Grids & Cartões de Jornada (Journey Map)
+   ------------------------------------------------------------------------- */
+.journey-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md, 16px);
+    width: 100%;
+}
+
+.journey-card {
+    border-left: 4px solid var(--primary);
+    transition: 
+        border-color var(--transition-fast) ease,
+        transform var(--transition-fast) ease,
+        box-shadow var(--transition-fast) ease;
+}
+
+.journey-card.is-completed {
+    border-left-color: var(--accent);
+}
+
+.journey-card.is-locked {
+    opacity: 0.6;
+    pointer-events: none;
+    border-left-color: var(--border);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Seleção de Metas & Respostas Rápidas (goals.css)
+   ------------------------------------------------------------------------- */
+.goals-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 12px);
+    width: 100%;
+}
+
+/* Seletor unificado para garantir compatibilidade com botões normais do JS legado */
+.quick-reply,
+.goal-option-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--font-md, 16px);
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    
+    transition: 
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease,
+        transform var(--transition-fast) ease,
+        box-shadow var(--transition-fast) ease;
+}
+
+/* Hover & Active aplicados aos botões de resposta e cards de meta */
+@media (hover: hover) {
+    .quick-reply:hover,
+    .goal-option-card:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+}
+
+.quick-reply:active,
+.goal-option-card:active {
+    transform: scale(0.98);
+}
+
+/* Estados de Seleção */
+.quick-reply.selected,
+.goal-option-card.is-selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(91, 92, 235, 0.15);
+}
+
+.goal-time-label {
+    font-weight: var(--weight-bold, 700);
+}
+
+.goal-intensity-badge {
+    font-size: var(--font-xs, 12px);
+    font-weight: var(--weight-semibold, 600);
+    color: var(--muted);
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Quiz & Teste de Nivelamento (level-test.css / onboarding.css)
+   ------------------------------------------------------------------------- */
+.diagnostic-body,
+.quiz-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md, 16px);
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+/* Caixa de perguntas do Quiz */
+.question-title,
+.quiz-question-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-lg, 24px);
+    font-size: var(--font-lg, 18px);
+    font-weight: var(--weight-semibold, 600);
+    color: var(--text);
+    line-height: 1.4;
+    box-shadow: var(--shadow);
+}
+
+/* Lista de alternativas herdando o layout dos chips/botões antigos */
+.quiz-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs, 8px);
+}
+
+/* Alias perfeito para .quick-reply agir como uma opção de quiz se necessário */
+.quick-reply,
+.quiz-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 12px);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    background: var(--surface);
+    cursor: pointer;
+    text-align: left;
+    font-size: var(--font-md, 16px);
+}
+
+/* Feedback visual de Hover para opções do Quiz */
+@media (hover: hover) {
+    .quick-reply:hover,
+    .quiz-option:hover {
+        border-color: var(--primary);
+    }
+}
+
+/* Estados semânticos de acerto e erro (quiz.js / welcome.js) */
+.quick-reply.correct,
+.quiz-option.is-correct {
+    background: color-mix(in srgb, var(--accent) 10%, white);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: var(--weight-bold, 700);
+}
+
+.quick-reply.incorrect,
+.quiz-option.is-incorrect {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Tela de Conclusão / Resumo (finish.css)
+   ------------------------------------------------------------------------- */
+.finish-card {
+    text-align: center;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    box-shadow: var(--shadow-hover, 0 10px 25px rgba(0, 0, 0, 0.08));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md, 16px);
+    animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.finish-icon {
+    font-size: 48px;
+    animation: pulse 2.5s infinite;
+}
+
+.stats-summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm, 12px);
+    width: 100%;
+    margin: var(--space-md, 16px) 0;
+}
+
+/* Caixa de Estatísticas com dimensões fixas contra desalinhamento */
+.stat-box {
+    background: var(--surface-secondary);
+    padding: 12px;
+    border-radius: var(--radius-md, 12px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 90px; /* Evita assimetria visual caso um texto quebre linha */
+}
+
+.stat-value {
+    font-size: var(--font-lg, 18px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--text);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: var(--weight-semibold, 600);
+}
+
+
+/* -------------------------------------------------------------------------
+   7. Keyframes & Animações Dinâmicas (Fallbacks Locais)
+   ------------------------------------------------------------------------- */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   8. Responsividade & Acessibilidade móvel
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .stats-summary-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-xs, 8px);
+    }
+    
+    .welcome-card,
+    .finish-card {
+        padding: 20px 16px;
+    }
+    
+    .question-title,
+    .quiz-question-box {
+        padding: 20px; /* Ajuste para melhor uso de tela em celulares compactos */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .brand-orbit--inner,
+    .brand-orbit--outer,
+    .orbit-dot,
+    .brand-globe,
+    .welcome-container,
+    .onboarding-container,
+    .finish-card,
+    .finish-icon {
+        animation: none !important;
+        transform: none !important;
+        transition: none !important;
+    }
+}
+
+/* Goals e conclusão do onboarding */
+.goals-body fieldset.mentor-section {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.goals-helper {
+    margin-bottom: var(--space-sm);
+    color: var(--muted);
+}
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.tag-list .tag {
+    min-height: 38px;
+    padding: 7px 12px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--font-xs);
+    cursor: pointer;
+}
+
+.tag-list .tag.selected,
+.tag-list .tag[aria-pressed="true"] {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.tag-list .tag:focus-visible {
+    outline: 3px solid rgba(91, 92, 235, 0.25);
+    outline-offset: 2px;
+}
+
+.tag-editor {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-md);
+}
+
+.tag-editor input {
+    min-width: 0;
+    flex: 1;
+}
+
+.finish-plan-list {
+    gap: var(--space-xs);
+    margin-top: var(--space-sm);
+}
+
+.finish-note {
+    color: var(--muted);
+    line-height: 1.5;
+}

@@ -1,0 +1,766 @@
+/* ==========================================================================
+   Página: Passaporte de Idiomas e Diário de Bordo (Estudo Flex - Versão Final)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Container Principal e Capa Física com Animação 3D
+   ------------------------------------------------------------------------- */
+.passport-container {
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto var(--space-xl) auto;
+    padding: 0 var(--space-md);
+    contain: layout style;
+    perspective: 1200px; /* Prepara o ambiente para a física 3D */
+}
+
+/* O "livrete" físico do passaporte */
+.passport-book {
+    background: #5c1d24; /* Fallback clássico bordô imperial */
+    background: linear-gradient(135deg, #4a151b, #6b252c);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+    padding: var(--space-xl);
+    color: #f7e7c4; /* Tom dourado suave */
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    
+    /* Estado inicial: fechado ou preparando para abrir */
+    transform-origin: left center;
+    transform: rotateY(-5deg);
+    transition: transform 0.6s var(--ease-spring), box-shadow 0.6s var(--ease-out);
+}
+
+/* Gatilho disparado via JS para abrir o passaporte de forma imersiva */
+.passport-book.is-open {
+    transform: rotateY(0deg);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+/* Textura discreta de papel/couro */
+.passport-book::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+    background-size: 8px 8px;
+    opacity: 0.35; /* Ajustado cirurgicamente para maior discrição */
+    pointer-events: none;
+}
+
+/* Friso dourado decorativo */
+.passport-book-border {
+    border: 2px solid #f7e7c4;
+    border-radius: var(--radius);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Cabeçalho Oficial (Official Header)
+   ------------------------------------------------------------------------- */
+.passport-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.passport-emblem {
+    font-size: var(--font-4xl);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    animation: emblemFloat 4s ease-in-out infinite;
+}
+
+.passport-title {
+    font-size: var(--font-lg);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #f7e7c4;
+}
+
+.passport-subtitle {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.8;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Dados Biográficos Avançados (Simulação de Documento Real)
+   ------------------------------------------------------------------------- */
+.passport-bio-page {
+    background: #fffdf8;
+    background: linear-gradient(145deg, #fffdf8, #f5ead8);
+    border-radius: var(--radius-md);
+    border: 1px dashed #ded1bc;
+    padding: var(--space-md);
+    color: var(--text);
+    display: flex;
+    gap: var(--space-md);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.passport-photo-frame {
+    flex-shrink: 0;
+    position: relative;
+    width: 85px;
+    height: 105px;
+    background: var(--gray-200);
+    border: 3px double #ded1bc;
+    border-radius: var(--radius-xs);
+    overflow: hidden;
+}
+
+.passport-photo {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1.23;
+    object-fit: cover;
+    filter: grayscale(35%) sepia(25%) contrast(95%); /* Efeito vintage de impressão oficial */
+}
+
+/* Grade Biográfica de Informações */
+.passport-bio-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xs) var(--space-md);
+    flex-grow: 1;
+}
+
+.passport-bio-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.passport-bio-label {
+    font-size: var(--font-3xs);
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.5px;
+}
+
+.passport-bio-value {
+    font-size: var(--font-xs);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Grade de Vistos e Carimbos Customizados (Visa Stamps)
+   ------------------------------------------------------------------------- */
+.passport-stamps-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.passport-section-title {
+    font-size: var(--font-sm);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f7e7c4;
+    border-bottom: 1px solid rgba(247, 231, 196, 0.3);
+    padding-bottom: var(--space-xs);
+}
+
+.passport-stamps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: var(--space-md);
+}
+
+/* Elemento Base do Carimbo */
+.visa-stamp {
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-full);
+    border: 3px dashed rgba(247, 231, 196, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    position: relative;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform var(--transition-normal) var(--ease-bounce);
+}
+
+.visa-stamp-flag {
+    font-size: var(--font-xl);
+}
+
+.visa-stamp-code {
+    font-size: var(--font-xs);
+    font-weight: var(--weight-extrabold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Selo de Nível Interno (Sub-carimbos QECR) */
+.visa-stamp-level {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-extrabold);
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    transform: rotate(5deg);
+    border: 1px solid currentColor;
+}
+
+/* --- Estados Físicos e Cromáticos do Carimbo (Tinta Desgastada) --- */
+.visa-stamp.is-stamped {
+    opacity: 0.92;
+    filter: contrast(115%) saturate(85%); /* Efeito realista de tinta real no papel */
+    mix-blend-mode: multiply;
+    background: rgba(255, 255, 255, 0.03);
+    transform: rotate(-6deg);
+}
+
+/* Efeito Hover Inteligente (Escala + Rotação) */
+.visa-stamp.is-stamped:hover {
+    transform: scale(1.08) rotate(5deg);
+}
+
+/* Mapeamento de Cores Dedicadas por Idioma/Cultura */
+.visa-stamp--en.is-stamped {
+    color: #1a5fb4;
+    border: 3px double #1a5fb4;
+}
+.visa-stamp--fr.is-stamped {
+    color: #162a45;
+    border: 3px double #162a45;
+}
+.visa-stamp--es.is-stamped {
+    color: #e63946;
+    border: 3px double #e63946;
+}
+.visa-stamp--de.is-stamped {
+    color: #b58900;
+    border: 3px double #b58900;
+}
+.visa-stamp--it.is-stamped {
+    color: #2a9d8f;
+    border: 3px double #2a9d8f;
+}
+.visa-stamp--jp.is-stamped {
+    color: #d62828;
+    border: 3px double #d62828;
+}
+
+/* Estado Bloqueado */
+.visa-stamp.is-locked {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+
+/* --------------------------------------------------------------------------
+   5. Seção de Conquistas (Diário de Bordo) - Acoplado Nativo
+   -------------------------------------------------------------------------- */
+.passport-achievements-section {
+    width: 100%;
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto var(--space-xxl);
+    padding-inline: var(--space-md);
+}
+
+.passport-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.passport-section-header > div {
+    min-width: 0;
+}
+
+.passport-section-header h2 {
+    color: var(--text);
+    margin-top: var(--space-xs);
+}
+
+.passport-achievements-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding-inline: var(--space-sm);
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-full);
+    color: var(--primary);
+    font-size: var(--font-sm);
+    font-weight: var(--weight-bold);
+    flex-shrink: 0;
+}
+
+/* Grade Dinâmica */
+.passport-achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    width: 100%;
+}
+
+/* Card Base da Conquista */
+.passport-achievement-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-md);
+    background:
+        radial-gradient(circle at top right, rgba(91, 92, 235, 0.08), transparent 38%),
+        linear-gradient(145deg, #fffdf8, #f8f1e6);
+    border: 1px solid #ded1bc;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    color: var(--text);
+    overflow: hidden;
+    transition:
+        transform var(--transition-normal) var(--ease-out),
+        border-color var(--transition-normal) var(--ease-out),
+        box-shadow var(--transition-normal) var(--ease-out);
+}
+
+/* Textura discreta de papel nos cards de conquista */
+.passport-achievement-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(64, 45, 27, 0.045) 0.7px, transparent 0.7px);
+    background-size: 7px 7px;
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+/* Marca d'água decorativa de carimbo */
+.passport-achievement-card::after {
+    content: "";
+    position: absolute;
+    right: -32px;
+    top: -32px;
+    width: 110px;
+    height: 110px;
+    border: 3px double rgba(91, 92, 235, 0.13);
+    border-radius: var(--radius-full);
+    transform: rotate(12deg);
+    pointer-events: none;
+}
+
+.passport-achievement-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (hover: hover) {
+    .passport-achievement-card:hover {
+        transform: translateY(-4px) rotate(-0.3deg);
+        border-color: rgba(91, 92, 235, 0.35);
+        box-shadow: var(--shadow-hover);
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Cabeçalho da Conquista
+   -------------------------------------------------------------------------- */
+.achievement-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.achievement-language {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+}
+
+.achievement-language-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.achievement-language-info small {
+    color: var(--muted);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.achievement-language-info strong {
+    color: var(--text);
+    font-size: var(--font-sm);
+    font-weight: var(--weight-bold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.achievement-flag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: var(--surface);
+    border: 1px solid #ded1bc;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    font-size: 23px;
+    flex-shrink: 0;
+}
+
+.achievement-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--primary-light);
+    border: 1px solid rgba(91, 92, 235, 0.22);
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    font-size: 25px;
+    flex-shrink: 0;
+    transform: rotate(3deg);
+}
+
+
+/* --------------------------------------------------------------------------
+   7. Imagem Opcional de Conquista
+   -------------------------------------------------------------------------- */
+.achievement-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--gray-200);
+    border: 1px solid #ded1bc;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.achievement-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 -30px 50px rgba(32, 36, 58, 0.08);
+    pointer-events: none;
+}
+
+.achievement-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow) var(--ease-out);
+}
+
+@media (hover: hover) {
+    .passport-achievement-card:hover .achievement-image {
+        transform: scale(1.035);
+    }
+}
+
+.achievement-media[hidden] {
+    display: none !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. Conteúdo e Corpo da Conquista
+   -------------------------------------------------------------------------- */
+.achievement-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+}
+
+.achievement-category {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 3px 9px;
+    background: rgba(91, 92, 235, 0.09);
+    border-radius: var(--radius-full);
+    color: var(--primary);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-extrabold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.achievement-title {
+    color: var(--text);
+    font-size: var(--font-lg);
+    font-weight: var(--weight-bold);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.achievement-description {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+
+/* --------------------------------------------------------------------------
+   9. Rodapé de Estatísticas Metrificadas
+   -------------------------------------------------------------------------- */
+.achievement-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px dashed #d8c9b0;
+}
+
+.achievement-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.achievement-stat small {
+    color: var(--muted);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.achievement-stat strong {
+    color: var(--text);
+    font-size: var(--font-xs);
+    font-weight: var(--weight-bold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. Modificadores Arquiteturais Temáticos
+   -------------------------------------------------------------------------- */
+.passport-achievement-card--experience { border-left: 4px solid var(--primary); }
+.passport-achievement-card--learning   { border-left: 4px solid var(--info); }
+.passport-achievement-card--streak     { border-left: 4px solid var(--warning); }
+.passport-achievement-card--milestone  { border-left: 4px solid var(--success); }
+.passport-achievement-card--culture    { border-left: 4px solid #a45be0; }
+.passport-achievement-card--challenge  { border-left: 4px solid var(--danger); }
+
+.passport-achievement-card--learning .achievement-icon {
+    background: #eaf5ff;
+    border-color: rgba(51, 152, 255, 0.2);
+    color: var(--info);
+}
+
+.passport-achievement-card--streak .achievement-icon {
+    background: #fff7df;
+    border-color: rgba(255, 180, 0, 0.25);
+    color: var(--warning);
+}
+
+.passport-achievement-card--milestone .achievement-icon {
+    background: #e8faf5;
+    border-color: rgba(24, 184, 146, 0.25);
+    color: var(--success);
+}
+
+.passport-achievement-card--culture .achievement-icon {
+    background: #f7edff;
+    border-color: rgba(164, 91, 224, 0.22);
+    color: #8d45c8;
+}
+
+.passport-achievement-card--challenge .achievement-icon {
+    background: var(--danger-light);
+    border-color: rgba(212, 84, 106, 0.22);
+    color: var(--danger);
+}
+
+
+/* --------------------------------------------------------------------------
+   11. Estados Vazios (Empty State)
+   -------------------------------------------------------------------------- */
+.passport-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    min-height: 230px;
+    padding: var(--space-xl);
+    background: linear-gradient(145deg, #fffdf8, #f8f1e6);
+    border: 2px dashed #d8c9b0;
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.passport-empty-state[hidden] {
+    display: none !important;
+}
+
+.passport-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--surface);
+    border: 1px solid #d8c9b0;
+    border-radius: var(--radius-full);
+    font-size: 31px;
+    box-shadow: var(--shadow-sm);
+}
+
+.passport-empty-state h3 {
+    color: var(--text);
+    font-size: var(--font-lg);
+}
+
+.passport-empty-state p {
+    max-width: 360px;
+    color: var(--muted);
+    font-size: var(--font-sm);
+}
+
+
+/* --------------------------------------------------------------------------
+   12. Modo de Exportação e Compartilhamento (.is-share-preview)
+   -------------------------------------------------------------------------- */
+.passport-achievement-card.is-share-preview {
+    max-width: 420px;
+    margin-inline: auto;
+    padding: var(--space-lg);
+    background:
+        radial-gradient(circle at top right, rgba(91, 92, 235, 0.13), transparent 40%),
+        linear-gradient(145deg, #fffdf8, #f5ead8);
+    border: 2px solid #d8c6a2;
+    box-shadow: var(--shadow-lg);
+}
+
+.passport-achievement-card.is-share-preview::after {
+    width: 145px;
+    height: 145px;
+    right: -42px;
+    top: -42px;
+    border-color: rgba(91, 92, 235, 0.2);
+}
+
+.passport-achievement-card.is-share-preview .achievement-title { font-size: var(--font-xl); }
+.passport-achievement-card.is-share-preview .achievement-description { font-size: var(--font-md); }
+
+
+/* -------------------------------------------------------------------------
+   13. Animações Internas
+   ------------------------------------------------------------------------- */
+@keyframes emblemFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+
+/* -------------------------------------------------------------------------
+   14. Responsividade Adaptativa
+   ------------------------------------------------------------------------- */
+@media (max-width: 580px) {
+    .passport-book {
+        padding: var(--space-md);
+    }
+
+    .passport-book-border {
+        padding: var(--space-md);
+        gap: var(--space-lg);
+    }
+
+    .passport-bio-page {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .passport-bio-details {
+        width: 100%;
+        grid-template-columns: 1fr;
+        gap: var(--space-xs);
+    }
+
+    .passport-achievements-section {
+        padding-inline: 0;
+    }
+
+    .passport-achievements-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+
+    .passport-achievement-card {
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+    }
+}
+
+@media (max-width: 380px) {
+    .passport-section-header {
+        align-items: center;
+    }
+
+    .achievement-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .achievement-stat {
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        align-items: center;
+    }
+
+    .achievement-stat strong {
+        text-align: right;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .passport-book {
+        transform: none !important;
+        transition: none !important;
+    }
+    .passport-emblem {
+        animation: none !important;
+    }
+    .visa-stamp,
+    .passport-achievement-card,
+    .achievement-image {
+        transition: none !important;
+        transform: none !important;
+    }
+    .passport-achievement-card:hover .achievement-image {
+        transform: none !important;
+    }
+}

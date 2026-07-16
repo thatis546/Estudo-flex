@@ -1,0 +1,159 @@
+/* ==========================================================================
+   Componente: Navbar / Bottom Navigation (Estudo Flex)
+   ========================================================================== */
+
+/* 1. Menu de Navegação Global (Dentro do .bottombar) */
+.navbar-menu {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* 2. Item de Navegação (Ergonomia Mobile Superior e Semântica) */
+.navbar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px; /* Mais compacto e integrado */
+    height: 100%;
+    min-width: 48px; /* Largura mínima acessível para toque */
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: none !important;
+    position: relative;
+    user-select: none;
+    touch-action: manipulation; /* Otimização de tempo de resposta em navegadores móveis */
+    -webkit-tap-highlight-color: transparent; /* Remove flash de toque cinza padrão */
+    transition: 
+        color var(--transition-fast),
+        transform var(--transition-fast),
+        background-color var(--transition-fast);
+}
+
+/* 3. Ícones da Navegação (Blindagem de Eventos do Ponteiro) */
+.navbar-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    transition: transform var(--transition-fast) cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+.navbar-icon {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    pointer-events: none; /* Evita interferências no disparo do Router JS */
+    transition: fill var(--transition-fast);
+}
+
+/* 4. Rótulo de Texto (Labels Consistentes) */
+.navbar-label {
+    font-size: var(--font-2xs, 0.6875rem); /* Consistente com variables.css */
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+    user-select: none;
+    transition: 
+        font-weight var(--transition-fast),
+        color var(--transition-fast);
+}
+
+/* 5. Comportamentos de Hover e Interações Ativas */
+
+/* Impede que o hover fique travado em dispositivos móveis touch */
+@media (hover: hover) {
+    .navbar-item:hover {
+        color: var(--text);
+    }
+    
+    .navbar-item:hover .navbar-icon-wrapper {
+        transform: translateY(-2px);
+    }
+}
+
+/* Estado de compressão física natural ao clicar */
+.navbar-item:active {
+    transform: scale(0.96);
+}
+
+/* Foco amigável para acessibilidade de navegação física/teclado */
+.navbar-item:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -4px;
+    border-radius: var(--radius-md);
+}
+
+/* 6. Estado Selecionado Semântico (Router e Leitores de Tela) */
+.navbar-item.active,
+.navbar-item[aria-current="page"] {
+    color: var(--primary);
+}
+
+.navbar-item.active .navbar-label,
+.navbar-item[aria-current="page"] .navbar-label {
+    font-weight: var(--weight-bold);
+    color: var(--primary);
+}
+
+.navbar-item.active .navbar-icon-wrapper,
+.navbar-item[aria-current="page"] .navbar-icon-wrapper {
+    transform: scale(1.05) translateY(-1px); /* Destaque perfeitamente equilibrado */
+}
+
+/* Indicador de linha ativo elegante na base do item */
+.navbar-item.active::after,
+.navbar-item[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    bottom: 6px;
+    width: 24px;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    animation: fadeIn var(--transition-fast) ease-out;
+}
+
+/* 7. Alertas e Notificações (Badge Dot Flutuante Avançado) */
+.navbar-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--danger);
+    border-radius: var(--radius-full);
+    /* Sombra ao invés de borda para um renderização mais limpa e sem distorção */
+    box-shadow: 0 0 0 2px var(--surface); 
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/* 8. Responsividade para Telas Ultra-Comprimidas (< 360px) */
+@media (max-width: 359px) {
+    .navbar-item {
+        gap: 2px;
+    }
+    .navbar-label {
+        font-size: 10px; /* Compressão visual fina para caber em qualquer tela */
+    }
+    .navbar-item.active::after,
+    .navbar-item[aria-current="page"]::after {
+        bottom: 3px;
+        width: 18px;
+        height: 2px;
+    }
+}

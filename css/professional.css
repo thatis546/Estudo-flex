@@ -1,0 +1,529 @@
+/* ==========================================================================
+   Página: Módulo de Simulação Profissional (Estudo Flex - Final)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Container Principal e Grid de Trabalho (Workspace)
+   ------------------------------------------------------------------------- */
+.professional-container {
+    max-width: var(--container-medium);
+    margin: var(--space-lg) auto var(--space-xxl) auto;
+    padding: 0 var(--space-md);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+    contain: layout style;
+}
+
+@media (min-width: 992px) {
+    .professional-container {
+        grid-template-columns: 1.2fr 0.8fr;
+        align-items: start;
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Cabeçalho de Contexto e Área
+   ------------------------------------------------------------------------- */
+.professional-container .professional-context-header,
+.professional-container .professional-board-section {
+    grid-column: 1 / -1;
+}
+
+.professional-container .professional-context-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    flex-wrap: wrap;
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.professional-container .professional-area-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 0;
+    flex: 1;
+}
+
+.professional-container .professional-area-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: var(--primary-light);
+    border: 1px solid rgba(91, 92, 235, 0.2);
+    border-radius: var(--radius-lg);
+    font-size: 30px;
+    flex-shrink: 0;
+}
+
+.professional-container .professional-area-heading h1 {
+    color: var(--text);
+    font-size: var(--font-xl);
+    line-height: 1.2;
+}
+
+.professional-container .professional-area-heading p {
+    max-width: 620px;
+    margin-top: var(--space-xs);
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    line-height: 1.5;
+}
+
+.professional-container .professional-eyebrow {
+    display: block;
+    color: var(--primary);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-extrabold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.professional-container .professional-area-control,
+.professional-container .professional-language-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.professional-container .professional-area-control > span,
+.professional-container .professional-language-indicator small {
+    color: var(--muted);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.professional-container .professional-area-select {
+    min-height: 42px;
+    padding: 0 var(--space-md);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--font-sm);
+}
+
+.professional-container .professional-area-select:focus-visible {
+    outline: 3px solid rgba(91, 92, 235, 0.25);
+    outline-offset: 2px;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Banca Multidisciplinar (Reviewers)
+   ------------------------------------------------------------------------- */
+.professional-container .professional-section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.professional-container .professional-section-heading h2 {
+    margin-top: var(--space-xs);
+    color: var(--text);
+    font-size: var(--font-lg);
+}
+
+.professional-container .professional-board-count {
+    padding: 4px 10px;
+    background: var(--primary-light);
+    border-radius: var(--radius-full);
+    color: var(--primary);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-bold);
+}
+
+.professional-container .professional-board-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.professional-container .professional-board-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-sm);
+}
+
+.professional-container .professional-reviewer-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    padding: var(--space-md);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: transform var(--transition-fast) var(--ease-out), border-color var(--transition-fast) var(--ease-out), background-color var(--transition-fast) var(--ease-out);
+}
+
+.professional-container .professional-reviewer-card.is-selected {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.professional-container .professional-reviewer-card:focus-visible {
+    outline: 3px solid rgba(91, 92, 235, 0.25);
+    outline-offset: 3px;
+}
+
+.professional-container .professional-reviewer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.professional-container .professional-reviewer-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.professional-container .professional-reviewer-info strong {
+    overflow: hidden;
+    font-size: var(--font-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.professional-container .professional-reviewer-info small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: var(--font-3xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.professional-container .professional-reviewer-focus {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: var(--surface-secondary);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius);
+}
+
+.professional-container .professional-reviewer-focus strong,
+.professional-container .professional-reviewer-focus small,
+.professional-container .professional-reviewer-focus p {
+    overflow-wrap: anywhere;
+}
+
+.professional-container .professional-reviewer-focus-icon {
+    font-size: 24px;
+}
+
+.professional-container .professional-reviewer-focus strong {
+    color: var(--text);
+    font-size: var(--font-sm);
+}
+
+.professional-container .professional-reviewer-focus p {
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: var(--font-xs);
+    line-height: 1.5;
+}
+
+.professional-container .professional-reviewer-focus small {
+    display: block;
+    margin-top: var(--space-xs);
+    color: var(--primary);
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-semibold);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Cenário Profissional (Challenge Study)
+   ------------------------------------------------------------------------- */
+.professional-container .professional-scenario-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.professional-container .professional-scenario-card h2 {
+    color: var(--text);
+    font-size: var(--font-lg);
+}
+
+.professional-container .professional-scenario-context {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+    line-height: 1.6;
+}
+
+.professional-container .professional-task-box {
+    padding: var(--space-md);
+    background: var(--primary-light);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius);
+}
+
+.professional-container .professional-task-box strong {
+    color: var(--primary);
+    font-size: var(--font-xs);
+}
+
+.professional-container .professional-task-box p {
+    margin-top: var(--space-xs);
+    color: var(--text);
+    font-size: var(--font-sm);
+    line-height: 1.5;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Simulador de Texto (Editor)
+   ------------------------------------------------------------------------- */
+.professional-container .professional-editor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.professional-container .professional-editor-body {
+    padding: var(--space-lg);
+    min-height: 250px;
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    font-size: var(--font-md);
+    line-height: 1.6;
+    color: var(--text);
+    outline: none;
+}
+
+.professional-container textarea.professional-editor-body {
+    width: 100%;
+    resize: vertical;
+    border: none;
+}
+
+.professional-container textarea.professional-editor-body:focus {
+    outline: 3px solid rgba(91, 92, 235, 0.18);
+    outline-offset: -3px;
+}
+
+.professional-container.is-evaluating .professional-editor-body {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Termos Técnicos
+   ------------------------------------------------------------------------- */
+.professional-container .professional-technical-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.professional-container .professional-term-chip {
+    padding: 5px 10px;
+    background: var(--surface);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-full);
+    color: var(--primary);
+    font-size: var(--font-xs);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+}
+
+.professional-container .professional-term-chip.is-used {
+    background: var(--success);
+    border-color: var(--success);
+    color: #ffffff;
+}
+
+.professional-container .professional-term-chip.is-used::before {
+    content: "✓ ";
+}
+
+.professional-container .professional-term-chip:disabled,
+.professional-container .professional-term-add:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.professional-container .professional-term-card strong,
+.professional-container .professional-term-card p {
+    overflow-wrap: anywhere;
+}
+
+.professional-container .professional-term-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-full);
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+
+/* -------------------------------------------------------------------------
+   7. Analisador e Feedback (Sticky Panel)
+   ------------------------------------------------------------------------- */
+.professional-container .professional-analysis-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+@media (min-width: 992px) {
+    .professional-container .professional-analysis-panel {
+        position: sticky;
+        top: calc(var(--space-lg) + 64px);
+        max-height: calc(100vh - 96px);
+        overflow-y: auto;
+    }
+}
+
+.professional-container .meter-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow) var(--ease-out);
+}
+
+.professional-container .professional-feedback-terms span {
+    overflow-wrap: anywhere;
+}
+
+.professional-container .professional-feedback-terms.is-used {
+    background: rgba(24, 184, 146, 0.08);
+    color: var(--success);
+}
+
+
+/* -------------------------------------------------------------------------
+   8. Ações de Rodapé
+   ------------------------------------------------------------------------- */
+.professional-container .professional-action-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    grid-column: 1 / -1;
+}
+
+.professional-container .professional-btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-xs);
+    font-weight: var(--weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast) var(--ease-out), background-color var(--transition-fast) var(--ease-out), box-shadow var(--transition-fast) var(--ease-out);
+}
+
+.professional-container.is-evaluating .professional-btn--primary {
+    cursor: wait;
+}
+
+
+/* -------------------------------------------------------------------------
+   9. Responsividade e Motion
+   ------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+    .professional-container .professional-reviewer-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+    }
+}
+
+@media (max-width: 700px) {
+    .professional-container .professional-context-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .professional-container .professional-board-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .professional-container .meter-bar,
+    .professional-container .professional-btn,
+    .professional-container .professional-reviewer-card {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* Lista sem marcadores para manter semântica acessível sem alterar o layout. */
+.professional-track-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.professional-track-list-item {
+    min-width: 0;
+}
+
+.professional-track-list-item .professional-reviewer-card {
+    width: 100%;
+    height: 100%;
+}

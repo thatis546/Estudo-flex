@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Estudo Flex Languages: aprendizado de idiomas personalizado, conversação, trilhas, passaporte e treinamento profissional.">
+    <meta name="theme-color" content="#5b5ceb">
+
+    <title>Estudo Flex Languages</title>
+
+    <link rel="icon" href="./favicon.ico">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="./css/main.css">
+
+    <script type="module" src="./core/app.js"></script>
+</head>
+
+<body>
+    <a class="skip-link" href="#mainContent">Pular para o conteúdo principal</a>
+    <ef-header hidden></ef-header>
+
+    <div class="app-shell">
+        <main id="mainContent" tabindex="-1">
+
+            <section data-page="welcome" aria-label="Boas-vindas">
+                <ef-welcome></ef-welcome>
+            </section>
+
+            <section data-page="onboarding" aria-label="Configuração inicial" hidden>
+                <ef-onboarding></ef-onboarding>
+            </section>
+
+            <section data-page="goals" aria-label="Objetivos de aprendizagem" hidden>
+                <ef-goals></ef-goals>
+            </section>
+
+            <section data-page="level-test" aria-label="Teste de nível" hidden>
+                <ef-level-test></ef-level-test>
+            </section>
+
+            <section data-page="finish" aria-label="Conclusão da configuração" hidden>
+                <ef-finish></ef-finish>
+            </section>
+
+            <section data-page="home" aria-label="Página inicial" hidden>
+                <ef-home-page></ef-home-page>
+            </section>
+
+<!-- Seção de Idiomas - Agora um container que encapsula seus sub-componentes -->
+            <section data-page="languages" aria-label="Idiomas" hidden>
+                <ef-languages-page></ef-languages-page>
+            </section>
+
+            <section data-page="profile" aria-label="Perfil do aluno" hidden>
+                <ef-profile-page></ef-profile-page>
+            </section>
+
+            <section data-page="passport" aria-label="Passaporte de idiomas e diário de bordo" hidden>
+                <ef-passport-page></ef-passport-page>
+            </section>
+
+            <section data-page="speaking" aria-label="Treinamento de fala" hidden>
+                <ef-speaking-page></ef-speaking-page>
+            </section>
+
+            <section data-page="professional" aria-label="Treinamento profissional" hidden>
+                <ef-professional-page></ef-professional-page>
+            </section>
+        </main>
+
+        <aside id="mentorPanel" class="mentor-panel" aria-labelledby="mentorPanelTitle" hidden>
+            <header class="mentor-panel-header">
+                <h2 id="mentorPanelTitle">Meu Mentor</h2>
+                <button type="button" class="mentor-panel-close" data-action="close-mentor" aria-label="Fechar painel do mentor">×</button>
+            </header>
+            <div id="mentorFacts" class="mentor-facts" aria-live="polite"></div>
+        </aside>
+
+        <div id="overlay" class="overlay hidden" aria-hidden="true"></div>
+        <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    </div>
+
+    <ef-navbar hidden></ef-navbar>
+
+    <noscript>
+        <div class="noscript-message">
+            O Estudo Flex Languages precisa do JavaScript ativado para funcionar.
+        </div>
+    </noscript>
+</body>
+</html>

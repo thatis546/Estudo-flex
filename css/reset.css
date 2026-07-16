@@ -1,0 +1,121 @@
+/* ==========================================================================
+   Reset Moderno, Sanitização & Suporte a PWA/Web Components (Estudo Flex)
+   ========================================================================== */
+
+/* 1. Reset Global e Box-Sizing */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Suporte a PWA, Rolagem e Color Scheme */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light; /* Auxilia o SO a renderizar elementos nativos de UI */
+}
+
+/* 3. Ajuste do Viewport Dinâmico e Tipografia */
+body {
+    min-height: 100dvh; /* Evita quebra de layout com barras dinâmicas de mobile */
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+/* 4. Isolamento de Contexto para Web Components na Raiz */
+body > * {
+    isolation: isolate; /* Cria um contexto de renderização isolado para cada tela */
+}
+
+/* 5. Reset de Listas e Links (Acabou a duplicação no CSS de componente) */
+ul,
+ol {
+    list-style: none;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* 6. Herança de Fontes e Reset de Elementos de Formulário */
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+code,
+pre {
+    font-family: inherit;
+}
+
+/* 7. Melhorias Mobile, Interações e Placeholders */
+button {
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation; /* Remove o delay de 300ms do clique em telas touch */
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+textarea {
+    resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+}
+
+/* 8. Estilização Elegante de Seleção de Texto */
+::selection {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+/* 9. Elementos de Mídia e SVG */
+img,
+picture,
+video,
+canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    overflow: visible; /* Impede cortes indesejados em paths do SVG */
+}
+
+/* 10. Acessibilidade de Foco */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}

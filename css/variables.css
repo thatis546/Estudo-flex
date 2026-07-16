@@ -1,0 +1,153 @@
+/* ==========================================================================
+   Design Tokens & CSS Custom Properties (Estudo Flex - Versão Final 10/10)
+   ========================================================================== */
+
+:root {
+    /* ---------------------------------------------------------------------
+       01. Colors (Grayscale & Brand Core)
+       --------------------------------------------------------------------- */
+    --gray-50:  #FAF9FF;
+    --gray-100: #F5F5F7;
+    --gray-200: #ECEEF5;
+    --gray-300: #D7DBE8;
+    --gray-400: #A3AAC2;
+    --gray-500: #6E7391;
+    --gray-600: #565D7A;
+    --gray-700: #404760;
+    --gray-800: #2D3349;
+    --gray-900: #20243A;
+
+    --primary: #5B5CEB;
+    --primary-hover: #4A4BD1;
+    --primary-light: #EEF0FF;
+
+    /* ---------------------------------------------------------------------
+       02. Semantic Colors (System Feedback)
+       --------------------------------------------------------------------- */
+    --success: #18B892;             /* Sucesso, acertos, progresso concluído */
+    --accent: var(--success);       /* Alias de sucesso usado na gamificação */
+    --danger: #D4546A;              /* Erros, validações e cancelamentos */
+    --danger-light: #fdecec;        /* Fundo de caixas de erro e quizzes */
+    --warning: #FFB400;             /* Alertas e estados intermediários */
+    --info: #3398FF;                /* Notas pedagógicas e informativos */
+
+    /* ---------------------------------------------------------------------
+       03. Surfaces (Backgrounds, Borders & Texts)
+       --------------------------------------------------------------------- */
+    --bg: var(--gray-100);
+    --background: var(--bg);          /* Resolução de conflito com o reset.css */
+    --surface: #FFFFFF;
+    --surface-secondary: var(--gray-50);
+    --border: var(--gray-200);
+    --text: var(--gray-900);
+    --text-secondary: var(--gray-600); /* Alias para retrocompatibilidade */
+    --muted: var(--gray-500);
+
+    /* ---------------------------------------------------------------------
+       04. Overlay (Transparencies & Blurs)
+       --------------------------------------------------------------------- */
+    --overlay: rgba(32, 36, 58, 0.45); /* Baseado no --gray-900 */
+    --blur: 16px;
+
+    /* ---------------------------------------------------------------------
+       05. Spacing (Layout & Box Sizing)
+       --------------------------------------------------------------------- */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-xxl: 48px;
+    --space-3xl: 64px;
+    --space-4xl: 96px;
+
+    /* ---------------------------------------------------------------------
+       06. Typography (Advanced Font Scale)
+       --------------------------------------------------------------------- */
+    --font-3xs: 0.625rem;  /* 10px - Micro-legenda / Badges compactos */
+    --font-2xs: 0.75rem;   /* 12px - Legendas secundárias, Horários */
+    --font-xs: 0.8125rem;  /* 13px - Metadados, Eyebrows */
+    --font-sm: 0.875rem;   /* 14px - Corpo secundário, Labels, Inputs */
+    --font-md: 1rem;       /* 16px - Texto do corpo principal (Padrão) */
+    --font-lg: 1.125rem;   /* 18px - Subtítulos informais, botões em destaque */
+    --font-xl: 1.25rem;    /* 20px - Título de cards e componentes interativos */
+    --font-2xl: 1.5rem;    /* 24px - Cabeçalhos secundários, Seções */
+    --font-3xl: 1.875rem;  /* 30px - Títulos de páginas, Hero headlines */
+    --font-4xl: 2.25rem;
+    --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;   /* 36px - Display numérico, Placar de Gamificação */
+
+    /* ---------------------------------------------------------------------
+       07. Font Weights
+       --------------------------------------------------------------------- */
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --weight-extrabold: 800;
+
+    /* ---------------------------------------------------------------------
+       08. Radius (Border Radius Scale)
+       --------------------------------------------------------------------- */
+    --radius-xs: 6px;       /* Token para botões compactos, tags e ícones */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius: 20px;         /* Token de ouro original para Cards */
+    --radius-lg: 24px;      /* Token de cantos para painéis imersivos (Mentor/Welcome) */
+    --radius-full: 9999px;
+
+    /* ---------------------------------------------------------------------
+       09. Shadows (Elevation System)
+       --------------------------------------------------------------------- */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 15px 35px rgba(0, 0, 0, 0.15);
+    --shadow: var(--shadow-md); /* Alias unificado */
+    --shadow-hover: 0 15px 35px rgba(91, 92, 235, 0.15);
+
+    /* ---------------------------------------------------------------------
+       10. Z-Index (Layer Guardrails)
+       --------------------------------------------------------------------- */
+    --z-navbar: 100;
+    --z-header: 200;
+    --z-overlay: 300;
+    --z-modal: 400;
+    --z-toast: 500;
+    --z-loading: 600;
+
+    /* ---------------------------------------------------------------------
+       11. Containers (Max-Width Limits)
+       --------------------------------------------------------------------- */
+    --container: 1200px;
+    --container-small: 820px;
+    --container-medium: 900px;
+    --container-large: 1200px;
+    --container-chat: 760px;
+
+    /* ---------------------------------------------------------------------
+       12. Motion (Transitions & Animation Durations)
+       --------------------------------------------------------------------- */
+    /* Transition Times (Microinterações e hovers rápidos) */
+    --transition-fast: 0.15s;
+    --transition-normal: 0.25s;
+    --transition-slow: 0.45s;
+
+    /* Animation Durations (Keyframes físicos de UI e loadings) */
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-loading: 1200ms;
+
+    /* ---------------------------------------------------------------------
+       13. Easing (Physics Curves)
+       --------------------------------------------------------------------- */
+    --ease-standard: ease;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);       /* Entrada de painéis fluida */
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);  /* Elementos elásticos */
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1); /* Toque tátil e orgânico */
+
+    /* ---------------------------------------------------------------------
+       14. Gradients
+       --------------------------------------------------------------------- */
+    --gradient-primary: linear-gradient(135deg, #5B5CEB, #7877FF);
+    --gradient-danger: linear-gradient(135deg, var(--danger), #b93650);
+}

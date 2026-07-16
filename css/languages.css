@@ -1,0 +1,278 @@
+/* ===================================================
+   Languages Page
+   Estudo Flex Languages
+=================================================== */
+
+.languages-page{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+    padding:24px;
+}
+
+/* =====================================
+   Cabeçalho
+===================================== */
+
+.languages-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:16px;
+}
+
+.languages-header h1{
+    font-size:2rem;
+    font-weight:700;
+    color:var(--text);
+}
+
+.languages-header p{
+    color:var(--muted);
+    margin-top:4px;
+}
+
+/* =====================================
+   Cards
+===================================== */
+
+.language-card{
+    background:#fff;
+    border-radius:24px;
+    padding:24px;
+    box-shadow:0 10px 35px rgba(0,0,0,.08);
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+
+    transition:.25s;
+}
+
+.language-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 45px rgba(0,0,0,.12);
+}
+
+.language-info{
+    flex:1;
+}
+
+.language-title{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+}
+
+.language-flag{
+    font-size:2rem;
+}
+
+.language-name{
+    font-size:1.4rem;
+    font-weight:700;
+}
+
+.language-level{
+    color:var(--primary);
+    font-weight:600;
+}
+
+.language-description{
+    color:var(--muted);
+    line-height:1.5;
+}
+
+/* =====================================
+   Mentor
+===================================== */
+
+.language-mentor{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:18px;
+}
+
+.mentor-avatar{
+
+    width:48px;
+    height:48px;
+
+    border-radius:50%;
+
+    background:linear-gradient(
+        135deg,
+        #6c63ff,
+        #8b7cff
+    );
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    color:#fff;
+    font-size:1.3rem;
+}
+
+.mentor-name{
+    font-weight:600;
+}
+
+.mentor-role{
+    color:var(--muted);
+    font-size:.9rem;
+}
+
+/* =====================================
+   Barra de progresso
+===================================== */
+
+.progress-area{
+    margin-top:20px;
+}
+
+.progress-label{
+
+    display:flex;
+    justify-content:space-between;
+
+    font-size:.9rem;
+
+    margin-bottom:8px;
+
+    color:var(--muted);
+
+}
+
+.progress{
+
+    height:10px;
+
+    border-radius:999px;
+
+    background:#ececff;
+
+    overflow:hidden;
+
+}
+
+.progress span{
+
+    display:block;
+
+    height:100%;
+
+    border-radius:999px;
+
+    background:linear-gradient(
+        90deg,
+        #5b5ce6,
+        #7b78ff
+    );
+
+    transition:.35s;
+
+}
+
+/* =====================================
+   Botões
+===================================== */
+
+.language-actions{
+
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+
+}
+
+.language-actions button{
+
+    min-width:170px;
+
+}
+
+/* =====================================
+   Grid
+===================================== */
+
+.languages-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(
+        auto-fit,
+        minmax(320px,1fr)
+    );
+
+    gap:24px;
+
+}
+
+/* =====================================
+   Estado vazio
+===================================== */
+
+.languages-empty{
+
+    text-align:center;
+
+    padding:60px 20px;
+
+    background:#fff;
+
+    border-radius:24px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.languages-empty h2{
+
+    margin-top:16px;
+
+}
+
+.languages-empty p{
+
+    color:var(--muted);
+
+    margin-top:10px;
+
+}
+
+/* =====================================
+   Responsivo
+===================================== */
+
+@media (max-width:768px){
+
+.language-card{
+
+    flex-direction:column;
+    align-items:flex-start;
+
+}
+
+.language-actions{
+
+    width:100%;
+
+}
+
+.language-actions button{
+
+    width:100%;
+
+}
+
+.languages-page{
+
+    padding:16px;
+
+}
+
+}

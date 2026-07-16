@@ -1,0 +1,414 @@
+/* ==========================================================================
+   Página: Perfil do Aluno e Conquistas (Estudo Flex - Versão Final)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Cabeçalho do Perfil (Header & Avatar Card)
+   ------------------------------------------------------------------------- */
+.profile-header-card {
+    position: relative; /* Preparado para banners absolutos de fundo no futuro */
+    overflow: hidden;   /* Garante que elementos filhos respeitem o limite do card */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-xl) var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+    box-shadow: var(--shadow);
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto 0 auto;
+    contain: layout style;
+}
+
+/* Container do Avatar com Badge de Nível Integrado */
+.profile-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar {
+    width: 96px;
+    height: 96px;
+    aspect-ratio: 1 / 1; /* Previne distorções caso a imagem enviada não seja quadrada */
+    border-radius: var(--radius-full);
+    border: 4px solid var(--primary);
+    background: var(--primary-light);
+    object-fit: cover;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Badge de nível que sobrepõe a borda do avatar */
+.profile-level-badge {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradient-primary);
+    color: #ffffff;
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-extrabold);
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+/* Informações Pessoais */
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.profile-name {
+    font-size: var(--font-2xl);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.profile-username {
+    font-size: var(--font-sm);
+    color: var(--muted);
+}
+
+/* Badge de Rank do Aluno (Gamificação de Prestígio) */
+.profile-rank {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: var(--font-2xs);
+    font-weight: var(--weight-bold);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    margin-top: var(--space-xs);
+    border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.profile-join-date {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-semibold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: var(--space-sm);
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Grid de Estatísticas Gerais (Stats Board)
+   ------------------------------------------------------------------------- */
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+    max-width: var(--container-small);
+    margin: var(--space-md) auto;
+    padding: 0;
+    list-style: none;
+}
+
+/* Card Individual de Estatística (Tratado como elemento interativo) */
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    cursor: pointer; /* Preparado para cliques e detalhamentos futuros */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: 
+        transform var(--transition-fast) var(--ease-spring),
+        box-shadow var(--transition-fast) var(--ease-out);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-card:active {
+    transform: scale(0.98);
+}
+
+/* Ícones de Estatística */
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+/* fallbacks de cor em cascata estática + @supports para máxima compatibilidade */
+.stat-card--xp .stat-icon-wrapper {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.stat-card--streak .stat-icon-wrapper {
+    background: #fff5e6;
+    color: var(--warning);
+}
+
+.stat-card--lessons .stat-icon-wrapper {
+    background: #e6fcf7;
+    color: var(--success);
+}
+
+.stat-card--fluency .stat-icon-wrapper {
+    background: #eaf5ff;
+    color: var(--info);
+}
+
+@supports (background: color-mix(in srgb, white, black)) {
+    .stat-card--streak .stat-icon-wrapper {
+        background: color-mix(in srgb, var(--warning) 10%, #ffffff);
+    }
+    .stat-card--lessons .stat-icon-wrapper {
+        background: color-mix(in srgb, var(--success) 10%, #ffffff);
+    }
+    .stat-card--fluency .stat-icon-wrapper {
+        background: color-mix(in srgb, var(--info) 10%, #ffffff);
+    }
+}
+
+.stat-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: var(--font-lg);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-size: var(--font-2xs);
+    color: var(--muted);
+    font-weight: var(--weight-medium);
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Gráfico/Heatmap de Atividade Semanal (Weekly Activity Heatmap)
+   ------------------------------------------------------------------------- */
+.profile-activity-section {
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto;
+}
+
+.activity-heatmap-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.heatmap-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.heatmap-day-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    flex: 1;
+}
+
+/* A barra/pilar de progresso diário */
+.heatmap-bar-track {
+    width: 100%;
+    max-width: 16px;
+    height: 100px;
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+    position: relative;
+    overflow: hidden;
+}
+
+.heatmap-bar-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: height var(--transition-slow) var(--ease-out);
+}
+
+.heatmap-day-label {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-bold);
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Mural de Conquistas (Badges Section)
+   ------------------------------------------------------------------------- */
+.achievements-section {
+    max-width: var(--container-small);
+    margin: var(--space-lg) auto var(--space-xxl) auto;
+}
+
+.section-title {
+    font-size: var(--font-lg);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    margin-bottom: var(--space-md);
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Bloco do Badge de Conquista */
+.badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-xs);
+    width: 100%; /* Força todos os itens a ocuparem proporção idêntica de largura */
+}
+
+.badge-illustration {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--surface-secondary);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    transition: transform var(--transition-normal) var(--ease-bounce);
+    user-select: none;
+}
+
+.badge-item:hover .badge-illustration {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.badge-title {
+    font-size: var(--font-2xs);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.badge-description {
+    font-size: var(--font-3xs);
+    color: var(--muted);
+    max-width: 100px;
+}
+
+/* --- Estados das Conquistas --- */
+
+/* 1. Estado: Conquistado */
+.badge-item.is-unlocked .badge-illustration {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(91, 92, 235, 0.15);
+}
+
+/* 2. Estado: Bloqueado */
+.badge-item.is-locked {
+    opacity: 0.55;
+}
+
+.badge-item.is-locked .badge-illustration {
+    filter: grayscale(100%);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Responsividade e Micro-Ajustes
+   ------------------------------------------------------------------------- */
+@media (max-width: 580px) {
+    .achievements-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding: var(--space-md);
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-header-card {
+        padding: var(--space-lg) var(--space-md);
+        border-radius: var(--radius-lg);
+    }
+
+    .profile-name {
+        font-size: var(--font-xl);
+    }
+
+    .profile-stats-grid {
+        grid-template-columns: 1fr; /* Conversão tátil e vertical no celular */
+        gap: var(--space-sm);
+    }
+
+    .stat-card {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-sm);
+    }
+
+    .badge-illustration {
+        width: 56px;
+        height: 56px;
+        font-size: 26px;
+    }
+    
+    .heatmap-bar-track {
+        height: 70px; /* Adapta a escala do gráfico para telas curtas */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .badge-item:hover .badge-illustration,
+    .stat-card:hover {
+        transform: none !important;
+    }
+    .stat-card,
+    .heatmap-bar-fill {
+        transition: none !important;
+    }
+}

@@ -1,0 +1,227 @@
+/* ==========================================================================
+   Componente: Cards, Containers & Modificadores (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Card Base (Estrutura Estática)
+   ------------------------------------------------------------------------- */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-md, 16px);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 12px);
+    width: 100%;
+    overflow: hidden; /* Evita vazamento de imagens internas */
+    
+    /* Prevenção moderna contra estouro de layout */
+    min-width: 0; 
+    overflow-wrap: anywhere;
+    
+    transition: 
+        border-color var(--transition-normal),
+        box-shadow var(--transition-normal),
+        transform var(--transition-normal);
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Cards Interativos (Hover & Active States)
+   ------------------------------------------------------------------------- */
+.card-interactive,
+.card-clickable {
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    will-change: transform; /* Otimização de hardware para animações mais fluidas */
+    transition: all var(--transition-fast);
+}
+
+/* Hover restrito a dispositivos com ponteiro (mouse) */
+@media (hover: hover) {
+    .card-interactive:hover,
+    .card-clickable:hover {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+        transform: translateY(-2px);
+    }
+}
+
+/* Feedback de clique físico tátil e equilibrado */
+.card-interactive:active,
+.card-clickable:active {
+    transform: scale(0.985);
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Estados Selecionados & Feedbacks (Múltipla Escolha / Quiz)
+   ------------------------------------------------------------------------- */
+.card-interactive.selected,
+.card-interactive[aria-selected="true"] {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(91, 92, 235, 0.15); /* Efeito suave de anel */
+}
+
+/* Feedbacks de validação do Teste de Nivelamento */
+.card-interactive.success-state {
+    background: color-mix(in srgb, var(--accent) 10%, white);
+    border-color: var(--accent);
+}
+
+.card-interactive.danger-state {
+    background: var(--danger-light, #fcecec);
+    border-color: var(--danger);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Subestruturas Organizacionais dos Cards
+   ------------------------------------------------------------------------- */
+
+/* Cabeçalho do Card (Excelente para lidar com textos longos) */
+.card-header {
+    display: flex;
+    align-items: flex-start; /* Alinhamento sutil no topo para subtítulos longos */
+    justify-content: space-between;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.card-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: var(--font-md, 16px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--text);
+    line-height: 1.3;
+    
+    /* Exibe até 2 linhas antes de aplicar o ellipsis */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-subtitle {
+    font-size: var(--font-xs, 12px);
+    color: var(--text-secondary, #555c73); /* Token semântico adicionado */
+    line-height: 1.2;
+}
+
+/* Corpo do Card */
+.card-body {
+    font-size: var(--font-sm, 14px);
+    color: var(--text-secondary, #555c73);
+    line-height: 1.5;
+}
+
+/* Rodapé do Card */
+.card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--border);
+    width: 100%;
+    flex-wrap: wrap; /* Evita quebra física em telas pequenas */
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Variações de Comportamento, Modificadores & IA (Sprint 5/6)
+   ------------------------------------------------------------------------- */
+
+/* Card de Progresso Vertical */
+.card-progress {
+    border-left: 4px solid var(--primary);
+}
+
+/* Card Destaque */
+.card-featured {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--primary-light) 100%);
+    border-color: var(--primary-light);
+    overflow: hidden;
+}
+
+/* Card Exclusivo do Painel do Mentor IA */
+.card-mentor {
+    background: linear-gradient(135deg, var(--surface) 30%, rgba(91, 92, 235, 0.08) 100%);
+    border-color: rgba(91, 92, 235, 0.2);
+    overflow: hidden;
+}
+
+/* Card Sem Bordas ou Sombras (Excelente para embutir elementos) */
+.card-flat {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+}
+
+/* Card Compacto para Menos Espaço */
+.card-compact {
+    padding: 12px;
+    gap: 8px;
+}
+
+/* Card Bloqueado / Carregando */
+.card-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Subcomponentes e Elementos Internos Reutilizáveis
+   ------------------------------------------------------------------------- */
+
+/* Barra de Progresso Interna */
+.card-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--surface-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.card-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: var(--radius-full);
+    width: 0%; 
+    min-width: 2px; /* Nunca desaparece por completo visualmente */
+    transition: width var(--transition-slow, 0.4s) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sucesso na barra de progresso */
+.card-progress-bar--success .card-progress-fill {
+    background: var(--accent);
+}
+
+/* Badge de ícone */
+.card-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md, 12px);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 20px; /* Redimensionado para ícones ficarem mais legíveis */
+    flex-shrink: 0;
+}

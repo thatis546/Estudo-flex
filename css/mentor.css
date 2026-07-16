@@ -1,0 +1,199 @@
+/* ==========================================================================
+   Componente: Painel do Mentor IA (Conversação e Chat)
+   ========================================================================== */
+
+/* Declaração local preventiva para evitar quebras se o variables.css ainda não contiver */
+:root {
+    --radius-lg: 24px;
+}
+
+/* -------------------------------------------------------------------------
+   1. Container Principal do Chat (.mentor-chat)
+   ------------------------------------------------------------------------- */
+.mentor-chat {
+    background: var(--surface-secondary); 
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg); 
+    padding: var(--space-md, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md, 16px);
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    box-shadow: var(--shadow);
+    contain: content; /* Otimização máxima recomendada (layout paint style) */
+}
+
+/* Header do Mentor (Alinhamento Flexível para Ações Futuras) */
+.mentor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Permite ícones de configuração/ações na direita */
+    gap: var(--space-sm, 12px);
+    padding-bottom: var(--space-sm, 12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.mentor-profile-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 12px);
+}
+
+/* Avatar otimizado para acessibilidade visual e toque */
+.mentor-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    border: 2px solid var(--primary);
+    box-shadow: 0 2px 8px rgba(91, 92, 235, 0.15);
+    flex-shrink: 0;
+}
+
+.mentor-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Nome do Mentor */
+.mentor-name {
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+/* Status Ativo */
+.mentor-status {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: var(--weight-semibold, 600);
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Balões de Mensagem (Conversação Dinâmica)
+   ------------------------------------------------------------------------- */
+.mentor-messages-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 12px);
+    height: 400px;
+    max-height: 60vh; /* Excelente comportamento ergonômico em telas móveis */
+    overflow-y: auto;
+    overscroll-behavior: contain; /* Impede que o scroll vaze para o body da página */
+    padding-right: 4px;
+    
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.mentor-messages-container::-webkit-scrollbar {
+    width: 4px;
+}
+.mentor-messages-container::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: var(--radius-full);
+}
+
+/* Estrutura de balão dinâmica */
+.mentor-bubble {
+    width: fit-content; /* Mensagens curtas não ocupam o container inteiro */
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: var(--radius-md, 12px);
+    font-size: var(--font-sm, 14px);
+    line-height: 1.4;
+    word-break: break-word;
+    animation: fadeInUp var(--transition-fast) ease-out;
+}
+
+/* Mensagem do Bot */
+.mentor-bubble--bot {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+/* Mensagem do Usuário */
+.mentor-bubble--user {
+    background: var(--primary);
+    color: #ffffff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px rgba(91, 92, 235, 0.15);
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Balão de Explicação (Substituído color-mix por fallback de alta compatibilidade)
+   ------------------------------------------------------------------------- */
+.mentor-explanation {
+    background: var(--primary-light); /* Fallback de alta compatibilidade para Safari antigo */
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-sm, 12px);
+    margin-top: var(--space-xs, 8px);
+    font-size: var(--font-xs, 12px);
+    color: var(--text);
+}
+
+.mentor-explanation-title {
+    font-weight: var(--weight-bold, 700);
+    color: var(--primary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Indicador de Digitação (Usa o keyframe já unificado globalmente)
+   ------------------------------------------------------------------------- */
+.mentor-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+}
+
+.mentor-typing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--muted);
+    border-radius: var(--radius-full);
+    animation: typingBounce 1.4s infinite ease-in-out both; /* Puxa o keyframe único do chat.css */
+}
+
+.mentor-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.mentor-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+
+/* -------------------------------------------------------------------------
+   5. Responsividade
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .mentor-chat {
+        padding: 12px;
+        border-radius: var(--radius-md, 12px);
+    }
+    
+    .mentor-bubble {
+        max-width: 90%;
+        padding: 10px 14px;
+    }
+}

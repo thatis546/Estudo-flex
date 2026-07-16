@@ -1,0 +1,309 @@
+/* ==========================================================================
+   Página: Home & Trilha de Aprendizado (Estudo Flex - Versão Final)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Header de Status e Gamificação (Stats Bar)
+   ------------------------------------------------------------------------- */
+.home-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    contain: layout style;
+}
+
+.home-status-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+/* Indicadores Rápidos (XP, Streaks, Corações) */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-sm);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    transition: transform var(--transition-fast) var(--ease-spring);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.status-indicator:active {
+    transform: scale(0.95);
+}
+
+.status-indicator--streak {
+    color: var(--warning);
+    border-color: var(--border); /* Fallback seguro para Safari antigo */
+    border-color: color-mix(in srgb, var(--warning) 30%, var(--border));
+}
+
+.status-indicator--xp {
+    color: var(--primary);
+    border-color: var(--primary-light); /* Fallback seguro para Safari antigo */
+    border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+
+.status-indicator--hearts {
+    color: var(--danger);
+    border-color: var(--danger-light); /* Fallback seguro para Safari antigo */
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Container da Trilha de Aprendizado (The Learning Path)
+   ------------------------------------------------------------------------- */
+.learning-path-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xl);
+    padding: var(--space-xxl) var(--space-md);
+    width: 100%;
+    max-width: var(--container-small);
+    margin: 0 auto;
+    overscroll-behavior: contain;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Unidades de Estudo (Unit Section Card)
+   ------------------------------------------------------------------------- */
+.learning-unit-card {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-radius: var(--radius);
+    padding: var(--space-lg);
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Detalhe decorativo de fundo para dar profundidade de marca */
+.learning-unit-card::before {
+    content: "";
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+    pointer-events: none;
+}
+
+.learning-unit-badge {
+    font-size: var(--font-3xs);
+    font-weight: var(--weight-extrabold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: var(--radius-xs);
+    width: fit-content;
+}
+
+.learning-unit-title {
+    font-size: var(--font-xl);
+    font-weight: var(--weight-bold);
+    line-height: 1.2;
+}
+
+.learning-unit-description {
+    font-size: var(--font-sm);
+    opacity: 0.9;
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Nódulos Globais e Reutilizáveis de Lição (.lesson-node)
+   ------------------------------------------------------------------------- */
+.path-nodes-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    width: 100%;
+    position: relative;
+}
+
+/* Linha conectora vertical de fundo (Centralização geométrica perfeita) */
+.path-nodes-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    background: var(--gray-200);
+    z-index: 1;
+    border-radius: var(--radius-full);
+}
+
+/* Estrutura Base do Nódulo de Lição */
+.lesson-node {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    width: 100%;
+}
+
+/* Movimento em zigue-zague automático para a trilha principal da Home */
+.learning-path-container .lesson-node:nth-child(even) {
+    transform: translateX(35px);
+}
+.learning-path-container .lesson-node:nth-child(odd) {
+    transform: translateX(-35px);
+}
+.learning-path-container .lesson-node:nth-child(4n) {
+    transform: translateX(0);
+}
+
+/* O botão físico circular do nódulo */
+.lesson-node-button {
+    width: 76px;
+    height: 76px;
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    border: 6px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 var(--border);
+    transition: 
+        transform var(--transition-fast) var(--ease-spring),
+        box-shadow var(--transition-fast) var(--ease-spring),
+        border-color var(--transition-fast) var(--ease-out);
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent; /* Remove flash azul no toque mobile */
+}
+
+.lesson-node-label {
+    font-size: var(--font-2xs);
+    font-weight: var(--weight-bold);
+    color: var(--text);
+    text-align: center;
+}
+
+/* --- Estados de Negócio do Nódulo (Controlados via JS) --- */
+
+/* 1. Estado: Ativo (Próxima lição a ser feita) */
+.lesson-node.is-active .lesson-node-button {
+    border-color: var(--primary-light);
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 6px 0 var(--primary-hover);
+    will-change: transform, box-shadow; /* Aloca aceleração de hardware antes do loop */
+    animation: pulseActive var(--duration-loading) infinite var(--ease-standard);
+}
+
+.lesson-node.is-active .lesson-node-button:hover {
+    transform: translateY(2px);
+    box-shadow: 0 4px 0 var(--primary-hover);
+}
+
+.lesson-node.is-active .lesson-node-button:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 var(--primary-hover);
+}
+
+/* 2. Estado: Concluído */
+.lesson-node.is-completed .lesson-node-button {
+    border-color: var(--surface);
+    border-color: color-mix(in srgb, var(--success) 20%, #ffffff);
+    background: var(--success);
+    color: #ffffff;
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--success) 80%, #000000);
+}
+
+.lesson-node.is-completed .lesson-node-button:active {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 transparent;
+}
+
+/* 3. Estado: Bloqueado */
+.lesson-node.is-locked {
+    opacity: 0.6;
+}
+
+.lesson-node.is-locked .lesson-node-button {
+    background: var(--gray-300);
+    border-color: var(--gray-200);
+    color: var(--gray-500);
+    box-shadow: 0 6px 0 var(--gray-400);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Animações de Feedback Físico
+   ------------------------------------------------------------------------- */
+@keyframes pulseActive {
+    0% {
+        box-shadow: 0 6px 0 var(--primary-hover), 0 0 0 0 rgba(91, 92, 235, 0.4);
+    }
+    70% {
+        box-shadow: 0 6px 0 var(--primary-hover), 0 0 0 12px rgba(91, 92, 235, 0);
+    }
+    100% {
+        box-shadow: 0 6px 0 var(--primary-hover), 0 0 0 0 rgba(91, 92, 235, 0);
+    }
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Responsividade Móvel
+   ------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+    .home-status-bar {
+        padding: var(--space-sm) var(--space-md);
+    }
+    
+    .status-indicator {
+        font-size: var(--font-2xs);
+        padding: var(--space-xs) var(--space-sm);
+    }
+
+    /* Reduz o deslocamento lateral para evitar overflows em telas compactas (ex: iPhone SE) */
+    .learning-path-container .lesson-node:nth-child(even) {
+        transform: translateX(20px);
+    }
+    .learning-path-container .lesson-node:nth-child(odd) {
+        transform: translateX(-20px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lesson-node.is-active .lesson-node-button {
+        animation: none !important;
+        will-change: auto;
+    }
+    .lesson-node-button {
+        transition: none !important;
+    }
+}

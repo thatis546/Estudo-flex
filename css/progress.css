@@ -1,0 +1,333 @@
+/* ==========================================================================
+   Componente: Progresso, Trilhas e Gamificação (Estudo Flex)
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Barra de Progresso Global & Aliases (Onboarding, Testes e Lições)
+   ------------------------------------------------------------------------- */
+.progress-track,
+.progress-bar-global {
+    width: 100%;
+    height: 8px;
+    background: var(--surface-secondary);
+    border-radius: var(--radius-full, 999px);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Preenchimento dinâmico controlado por JS (via style.width) */
+.progress-track span,
+.progress-bar-fill {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+    border-radius: var(--radius-full, 999px);
+    width: 0%;
+    min-width: 4px; /* Garante visibilidade mínima inicial */
+    transition: width var(--transition-normal) ease;
+    will-change: width;
+}
+
+/* Variação de sucesso/conclusão da barra de progresso */
+.progress-track.success span,
+.progress-bar-fill--success {
+    background: var(--accent);
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Progresso Circular (SVG Rings - Metas Diárias e Quizzes)
+   ------------------------------------------------------------------------- */
+.progress-ring {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.progress-ring svg {
+    transform: rotate(-90deg); /* Inicia o preenchimento do topo (12 horas) */
+    width: 100%;
+    height: 100%;
+    overflow: visible; /* Impede que o stroke das bordas seja cortado pelo viewport do SVG */
+}
+
+.progress-ring-circle {
+    fill: none;
+    stroke-width: 8;
+    transition: stroke-dashoffset var(--transition-normal) ease;
+    will-change: stroke-dashoffset;
+}
+
+/* Canaleta estática (fundo do círculo) */
+.progress-ring-circle--bg {
+    stroke: var(--surface-secondary);
+}
+
+/* Progresso ativo */
+.progress-ring-circle--val {
+    stroke: var(--primary);
+    stroke-linecap: round;
+}
+
+/* Meta diária concluída */
+.progress-ring-circle--success {
+    stroke: var(--accent);
+}
+
+/* Texto centralizado */
+.progress-ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--text);
+    user-select: none;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Mapa de Progresso (Lesson Nodes / Trilhas Estilo Duolingo)
+   ------------------------------------------------------------------------- */
+.progress-map-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md, 16px);
+    padding: var(--space-lg, 24px) var(--space-md, 16px);
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.progress-path {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* Nós Interativos da Trilha */
+.progress-node {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    border: 4px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--text);
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    
+    user-select: none;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    
+    transition: 
+        background-color var(--transition-fast) ease,
+        border-color var(--transition-fast) ease,
+        transform var(--transition-fast) ease,
+        box-shadow var(--transition-fast) ease;
+}
+
+/* Força dimensionamento correto se o ícone interno for um SVG */
+.progress-node svg {
+    width: 32px;
+    height: 32px;
+    fill: none;
+    stroke: currentColor;
+}
+
+/* Estados do Nó de Progresso */
+
+/* Bloqueado */
+.progress-node:disabled,
+.progress-node.is-locked {
+    background: var(--surface-secondary);
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Ativo / Próxima lição a fazer */
+.progress-node.is-active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+    animation: pulse 2s infinite; /* Utiliza a animação de pulso nativa do animations.css */
+}
+
+/* Concluído */
+.progress-node.is-completed {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+@media (hover: hover) {
+    .progress-node:hover:not(:disabled):not(.is-locked) {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+}
+
+.progress-node:active:not(:disabled):not(.is-locked) {
+    transform: scale(0.95);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Indicador de Etapas (Step Indicator - Onboarding/Formulários)
+   ------------------------------------------------------------------------- */
+.step-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    margin-bottom: var(--space-md, 16px);
+}
+
+/* Linha de progresso por trás das etapas */
+.step-stepper::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    z-index: 1;
+    pointer-events: none; /* Evita que a linha intercepte cliques acidentalmente */
+}
+
+.step-item {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-xs, 12px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--muted);
+    position: relative;
+    z-index: 2;
+    transition: 
+        background var(--transition-fast) ease,
+        border-color var(--transition-fast) ease,
+        color var(--transition-fast) ease;
+}
+
+/* Estados das Etapas */
+.step-item.is-active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.step-item.is-completed {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+}
+
+
+/* -------------------------------------------------------------------------
+   5. Elementos de Gamificação (Streaks & XP Meters)
+   ------------------------------------------------------------------------- */
+.streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs, 6px);
+    background: rgba(255, 149, 0, 0.1); /* Laranja suave de fogo */
+    color: #ff9500;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    user-select: none;
+    white-space: nowrap; /* Impede que quebrem em duas linhas na topbar */
+}
+
+.streak-badge svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* Container de Pontos de Experiência (XP) */
+.xp-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    padding: var(--space-sm, 12px);
+    width: 100%;
+}
+
+.xp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xs, 8px);
+}
+
+.xp-title {
+    font-size: var(--font-xs, 12px);
+    font-weight: var(--weight-bold, 700);
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.xp-value {
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--weight-bold, 700);
+    color: var(--text);
+}
+
+
+/* -------------------------------------------------------------------------
+   6. Responsividade & Acessibilidade
+   ------------------------------------------------------------------------- */
+
+/* Ajuste ergonômico em telas ultra-compactas (ex: iPhone SE, celulares de até 400px) */
+@media (max-width: 400px) {
+    .progress-node {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+    }
+    
+    .progress-node svg {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .progress-ring {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progress-ring-circle,
+    .progress-track span,
+    .progress-bar-fill,
+    .progress-node,
+    .step-item {
+        transition: none !important;
+        animation: none !important;
+    }
+}
