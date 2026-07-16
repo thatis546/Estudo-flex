@@ -60,10 +60,10 @@ function getPassportLanguages() {
                     record.flag ||
                     configuration.flag ||
                     "🌍",
-                level:
-                    record.level ||
-                    state.profile?.levelTag ||
-                    "A1"
+                journey: record.setupComplete && (record.journeyLabel || record.level)
+                    ? (record.journeyLabel || record.level)
+                    : "Diagnóstico pendente",
+                setupComplete: Boolean(record.setupComplete)
             };
         })
         .filter(Boolean);
@@ -126,10 +126,7 @@ export class EFPassportCard extends HTMLElement {
                 .join(" • ")
             : "Nenhum idioma adicionado";
 
-        const currentLevel =
-            currentLanguage?.level ||
-            profile.levelTag ||
-            "A1";
+        const currentJourney = currentLanguage?.journey || "Diagnóstico pendente";
 
         const totalXP = Number.isFinite(
             Number(profile.xp)
@@ -138,10 +135,12 @@ export class EFPassportCard extends HTMLElement {
             : 0;
 
         const dailyMinutes = Number.isFinite(
-            Number(profile.dailyMinutes)
+            Number(state.getLanguage(currentCode)?.learningProfile?.dailyMinutes)
         )
-            ? Number(profile.dailyMinutes)
+            ? Number(state.getLanguage(currentCode)?.learningProfile?.dailyMinutes)
             : 0;
+
+        const avatar = profile.avatar?.imageUrl || "./assets/avatars/default-user.svg";
 
         this.innerHTML = `
             <article
@@ -151,7 +150,7 @@ export class EFPassportCard extends HTMLElement {
                 <div class="passport-photo-frame">
                     <img
                         class="passport-photo"
-                        src="./assets/avatars/default-user.svg"
+                        src="${escapeHTML(avatar)}"
                         alt="Avatar de ${escapeHTML(studentName)}">
                 </div>
 
@@ -190,17 +189,17 @@ export class EFPassportCard extends HTMLElement {
 
                     <div class="passport-bio-field">
                         <span class="passport-bio-label">
-                            Nível atual
+                            Jornada atual
                         </span>
 
                         <strong class="passport-bio-value">
-                            ${escapeHTML(currentLevel)}
+                            ${escapeHTML(currentJourney)}
                         </strong>
                     </div>
 
                     <div class="passport-bio-field">
                         <span class="passport-bio-label">
-                            XP total
+                            XP de atividades
                         </span>
 
                         <strong class="passport-bio-value">

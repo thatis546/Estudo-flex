@@ -49,7 +49,8 @@ function getLanguageRecords() {
             code: currentCode,
             name: configuration.name,
             flag: configuration.flag,
-            level: state.profile?.levelTag || "A1"
+            journey: "Pendente",
+            setupComplete: false
         });
     }
 
@@ -82,10 +83,10 @@ function getLanguageRecords() {
                     record.country ||
                     configuration.country ||
                     "Experiência internacional",
-                level:
-                    record.level ||
-                    state.profile?.levelTag ||
-                    "A1"
+                journey: record.setupComplete && (record.journeyLabel || record.level)
+                    ? (record.journeyLabel || record.level)
+                    : "Pendente",
+                setupComplete: Boolean(record.setupComplete)
             };
         })
         .filter(Boolean);
@@ -162,9 +163,9 @@ export class EFStamps extends HTMLElement {
         const stamps = languages
             .map((language) => `
                 <article
-                    class="visa-stamp visa-stamp--${escapeHTML(language.code)} is-stamped"
+                    class="visa-stamp visa-stamp--${escapeHTML(language.code)} ${language.setupComplete ? "is-stamped" : "is-locked"}"
                     title="${escapeHTML(language.name)} — ${escapeHTML(language.country)}"
-                    aria-label="Carimbo de ${escapeHTML(language.name)}, nível ${escapeHTML(language.level)}">
+                    aria-label="${language.setupComplete ? `Carimbo de ${escapeHTML(language.name)}, jornada ${escapeHTML(language.journey)}` : `Idioma ${escapeHTML(language.name)} com configuração pendente`}">
 
                     <span
                         class="visa-stamp-flag"
@@ -177,7 +178,7 @@ export class EFStamps extends HTMLElement {
                     </strong>
 
                     <span class="visa-stamp-level">
-                        ${escapeHTML(language.level)}
+                        ${escapeHTML(language.journey)}
                     </span>
                 </article>
             `)
