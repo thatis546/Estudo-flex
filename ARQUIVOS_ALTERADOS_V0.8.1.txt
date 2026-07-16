@@ -1,0 +1,26 @@
+Estudo Flex Languages 0.8.1 — arquivos novos ou alterados em relação à versão 0.8.0
+Total (sem contar este índice): 23
+
+ALTERACOES_V0.8.1.md
+ARQUIVOS_REMOVIDOS_V0.8.1.txt
+AUDITORIA_V0.8.1.md
+CHANGELOG.md
+DEPLOY_GITHUB_V0.8.1.md
+README.md
+backend/README.md
+backend/package-lock.json
+backend/package.json
+backend/src/server.js
+components/register.js
+core/app.js
+core/bootstrap.js
+core/config.js
+css/components.css
+index.html
+manifest.json
+package.json
+scripts/audit.mjs
+services/achievement-service.js
+sw.js
+tests/achievement-rewards.test.js
+tests/register.test.js
