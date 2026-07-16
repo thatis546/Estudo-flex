@@ -224,7 +224,7 @@ const cleanupTimer = setInterval(() => {
 cleanupTimer.unref?.();
 
 app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "estudo-flex-languages", version: "0.8.0" });
+    res.json({ ok: true, service: "estudo-flex-languages", version: "0.8.2" });
 });
 
 app.post("/api/gemini", async (req, res, next) => {
