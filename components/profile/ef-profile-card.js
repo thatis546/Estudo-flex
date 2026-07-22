@@ -1,6 +1,10 @@
 import { state } from "../../core/state.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
-import { getCurrentLanguageRecord, getLanguageLevelLabel } from "../../services/language-profile.service.js";
+import {
+    getCurrentLanguageRecord,
+    getEffectiveLearningProfile,
+    getLanguageLevelLabel
+} from "../../services/language-profile.service.js";
 import { getProfileOptionLabel, getPurposeSummary } from "../../core/profile-options.js";
 import { removeLanguageInterest } from "../../services/profile-privacy.service.js";
 import { getUserTrack } from "../../services/professional.js";
@@ -31,7 +35,7 @@ class EFProfileCard extends HTMLElement {
         const profile = state.profile || {};
         const record = getCurrentLanguageRecord();
         const language = record ? EF_LANGUAGES[record.code] : null;
-        const learningProfile = record?.learningProfile || {};
+        const learningProfile = getEffectiveLearningProfile(record, profile);
         const purpose = getPurposeSummary(learningProfile.goal);
         const purposeDescription = learningProfile.goalDescription || purpose?.goalDescription || "Objetivo ainda não detalhado.";
         const purposeUseCase = learningProfile.useCase || purpose?.useCase || "Situação de uso ainda não definida.";
@@ -44,7 +48,7 @@ class EFProfileCard extends HTMLElement {
         const recentActivities = profile.learning?.recentActivities || [];
         const languageOverview = state.languages.map((item) => {
             const catalog = EF_LANGUAGES[item.code] || item;
-            const itemProfile = item.learningProfile || {};
+            const itemProfile = getEffectiveLearningProfile(item, item.code === state.currentLanguage ? profile : {});
             const itemDetails = itemProfile.goalDetails || {};
             const itemTrack = getUserTrack(item.code);
             const status = item.setupComplete && item.diagnosticResult?.completedAt
@@ -98,14 +102,16 @@ class EFProfileCard extends HTMLElement {
                 <section class="profile-detail-grid" aria-label="Contexto do idioma atual">
                     <article class="card profile-detail-card"><small>Jornada atual</small><h3>${escapeHTML(record.journeyLabel || "Diagnóstico pendente")}</h3><p>Ela continuará sendo ajustada conforme atividades e uso real.</p></article>
                     <article class="card profile-detail-card"><small>Onde será usado</small><h3>${escapeHTML(getProfileOptionLabel(record.code, "lifeContext", learningProfile.lifeContext) || "Não definido")}</h3><p>${escapeHTML(purposeUseCase)}</p></article>
-                    <article class="card profile-detail-card"><small>Contato anterior</small><h3>${escapeHTML(getProfileOptionLabel(record.code, "contact", learningProfile.contact) || "Não informado")}</h3><p>${Number(learningProfile.dailyMinutes) || 0} minutos · ${escapeHTML(FREQUENCY[details.frequency] || details.frequency || "frequência não definida")}</p></article>
-                    <article class="card profile-detail-card"><small>Prazo e trilha profissional</small><h3>${escapeHTML(DEADLINE[details.deadline] || details.deadline || "Sem prazo")}</h3><p>${escapeHTML(track?.title || "Nenhuma trilha profissional selecionada")}</p></article>
+                    <article class="card profile-detail-card"><small>Contato anterior</small><h3>${escapeHTML(getProfileOptionLabel(record.code, "contact", learningProfile.contact) || "Não informado")}</h3><p>A dificuldade inicial das atividades e revisões considera esta resposta.</p></article>
+                    <article class="card profile-detail-card"><small>Tempo diário</small><h3>${Number(learningProfile.dailyMinutes) ? `${Number(learningProfile.dailyMinutes)} minutos` : "Não definido"}</h3><p>Tempo disponível por sessão para esta língua.</p></article>
+                    <article class="card profile-detail-card"><small>Frequência</small><h3>${escapeHTML(FREQUENCY[details.frequency] || details.frequency || "Não definida")}</h3><p>Ritmo semanal informado no onboarding.</p></article>
+                    <article class="card profile-detail-card"><small>Prazo</small><h3>${escapeHTML(DEADLINE[details.deadline] || details.deadline || "Sem prazo fixo")}</h3><p>${escapeHTML(track?.title || "Nenhuma trilha profissional selecionada")}</p></article>
                 </section>
 
                 <section class="card profile-section-card">
                     <header class="profile-section-heading"><div><p class="eyebrow">PERSONALIZAÇÃO</p><h2>Interesses de ${escapeHTML(language?.name || record.name)}</h2></div></header>
                     <div class="profile-removable-tags">
-                        ${interests.length ? interests.map((interest) => `<span class="profile-removable-tag"><span>${escapeHTML(interest)}</span><button type="button" data-remove-interest="${escapeHTML(interest)}" aria-label="Excluir interesse ${escapeHTML(interest)}">×</button></span>`).join("") : "<p>Nenhum interesse selecionado.</p>"}
+                        ${interests.length ? interests.map((interest) => `<span class="profile-removable-tag"><span>${escapeHTML(interest)}</span><button type="button" data-remove-interest="${escapeHTML(interest)}" aria-label="Excluir interesse ${escapeHTML(interest)}">×</button></span>`).join("") : "<p>Interesses ainda não definidos. O Perfil Vivo poderá descobri-los com as atividades.</p>"}
                     </div>
                 </section>
 

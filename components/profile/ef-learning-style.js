@@ -1,5 +1,5 @@
 import { state } from "../../core/state.js";
-import { getCurrentLanguageRecord } from "../../services/language-profile.service.js";
+import { getCurrentLanguageRecord, getEffectiveLearningProfile } from "../../services/language-profile.service.js";
 import { getLearningStyleLabel } from "../../core/profile-options.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
@@ -13,7 +13,7 @@ class EFLearningStyle extends HTMLElement {
     render() {
         const profile = state.profile || {};
         const record = getCurrentLanguageRecord();
-        const languageProfile = record?.learningProfile || {};
+        const languageProfile = getEffectiveLearningProfile(record, profile);
         const style = getLearningStyleLabel(languageProfile.learningStyle || profile.learningStyle) || "Ainda em análise";
         const support = LABELS[profile.supportMode] || "Suporte adaptativo";
         const correction = LABELS[profile.mentor?.correctionStyle] || "Correção ao final";
