@@ -38,6 +38,43 @@ class EFHomePage extends HTMLElement {
         const professionalTrack = getUserTrack();
         const professionalProgress = getProfessionalProgress();
         const pendingReviews = Array.isArray(record?.reviewQueue) ? record.reviewQueue.length : 0;
+        const onboardingComplete = state.isOnboardingCompleted();
+        const onboardingPaused = Boolean(profile.onboardingProgress?.paused);
+
+        if (!onboardingComplete) {
+            this.innerHTML = `
+                <section class="home-page home-page--paused">
+                    <div class="home-status-bar">
+                        <div class="home-status-group">
+                            <span class="status-indicator status-indicator--xp">⭐ 0 XP de atividades</span>
+                            <span class="status-indicator status-indicator--streak">🔥 0 dias</span>
+                        </div>
+                    </div>
+                    <article class="learning-unit-card home-welcome-card">
+                        <span class="learning-unit-badge">Configuração salva</span>
+                        <h1 class="learning-unit-title">Olá, ${escapeHTML(profile.name || "estudante")}!</h1>
+                        <p class="learning-unit-description">Você pode conhecer a Home agora e retomar exatamente de onde parou.</p>
+                    </article>
+                    <article class="card home-empty-action home-onboarding-resume">
+                        <p class="eyebrow">PRIMEIROS PASSOS</p>
+                        <h2>${onboardingPaused ? "Sua configuração está pausada" : "Termine a configuração inicial"}</h2>
+                        <p>As atividades só serão montadas depois que objetivo, rotina e diagnóstico deste idioma estiverem completos. Isso evita inventar nível, interesses ou tempo de estudo.</p>
+                        <button id="resumeOnboardingButton" type="button" class="primary full">Continuar configuração</button>
+                    </article>
+                    <article class="card home-preview-card">
+                        <h2>O que aparecerá aqui depois</h2>
+                        <ul>
+                            <li>Revisão rápida com conteúdo real.</li>
+                            <li>Plano do idioma escolhido.</li>
+                            <li>Communication Lab separado do Mentor.</li>
+                            <li>Trilha profissional com progresso próprio.</li>
+                        </ul>
+                    </article>
+                </section>
+            `;
+            this.querySelector("#resumeOnboardingButton")?.addEventListener("click", () => router.navigate(router.getResumePage()));
+            return;
+        }
 
         this.innerHTML = `
             <section class="home-page">
@@ -88,7 +125,7 @@ class EFHomePage extends HTMLElement {
                             <article class="home-action-card">
                                 <span class="home-action-icon" aria-hidden="true">🎙️</span>
                                 <div><small>Communication Lab</small><h3>${escapeHTML(plan.communication || "Treino técnico de oratória")}</h3><p>Grave e transcreva sua fala para analisar ritmo, clareza, muletas, repetições, projeção e variedade lexical.</p></div>
-                                <button id="openSpeakingButton" type="button" class="secondary full">Abrir Oratória</button>
+                                <button id="openSpeakingButton" type="button" class="secondary full">Abrir Communication Lab</button>
                             </article>
                             <article class="home-action-card home-action-card--mentor">
                                 <span class="home-action-icon" aria-hidden="true">💬</span>
