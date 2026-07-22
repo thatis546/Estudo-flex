@@ -1,7 +1,14 @@
 import { state } from "../../core/state.js";
 import { router } from "../../core/router.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
-import { getCurrentLanguageRecord, getLanguageLevelLabel, isLanguageReady } from "../../services/language-profile.service.js";
+import {
+    getCurrentLanguageRecord,
+    getEffectiveLearningProfile,
+    getLanguageLevelLabel,
+    isLanguageReady
+} from "../../services/language-profile.service.js";
+import { getReviewAvailability, formatNextReview } from "../../services/review.service.js";
+import { hasCompletedLearningActivity } from "../../services/lesson.service.js";
 import { getProfileOptionLabel, getPurposeSummary } from "../../core/profile-options.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -35,13 +42,20 @@ export class EFLanguageCard extends HTMLElement {
 
         const ready = isLanguageReady(record);
         const journey = getLanguageLevelLabel(record);
-        const profile = record.learningProfile || {};
+        const profile = getEffectiveLearningProfile(record, state.profile);
         const progress = Math.min(100, Math.max(0, Number(record.progress) || 0));
         const interests = profile.goalDetails?.interests || [];
         const purpose = getPurposeSummary(profile.goal);
         const purposeLabel = getProfileOptionLabel(code, "goal", profile.goal) || "A descobrir";
         const purposeDescription = profile.goalDescription || purpose?.goalDescription || "Objetivo em construção";
         const useCase = profile.useCase || purpose?.useCase || "Situação de uso em construção";
+        const review = getReviewAvailability(record);
+        const hasActivity = hasCompletedLearningActivity(record);
+        const reviewButtonLabel = review.status === "available"
+            ? `Revisar ${review.dueCount} ${review.dueCount === 1 ? "item" : "itens"}`
+            : hasActivity && review.nextReviewAt
+                ? `Revisão em ${formatNextReview(review.nextReviewAt)}`
+                : "Iniciar primeira atividade";
 
         this.innerHTML = `
             <article class="language-card" data-language="${escapeHTML(code)}">
@@ -73,7 +87,7 @@ export class EFLanguageCard extends HTMLElement {
                     <div class="actions language-card-actions">
                         <button id="editCurrentLanguage" type="button" class="secondary">Editar objetivo</button>
                         <button id="redoCurrentDiagnostic" type="button" class="secondary">Refazer diagnóstico</button>
-                        <button id="openCurrentReview" type="button" class="primary">Revisão rápida</button>
+                        <button id="openCurrentReview" type="button" class="primary">${escapeHTML(reviewButtonLabel)}</button>
                     </div>
                 ` : `
                     <div class="language-card-setup-message">
@@ -87,7 +101,9 @@ export class EFLanguageCard extends HTMLElement {
         this.querySelector("#configureCurrentLanguage")?.addEventListener("click", () => router.navigate("language-setup"));
         this.querySelector("#editCurrentLanguage")?.addEventListener("click", () => router.navigate("language-setup"));
         this.querySelector("#redoCurrentDiagnostic")?.addEventListener("click", () => router.navigate("language-diagnostic"));
-        this.querySelector("#openCurrentReview")?.addEventListener("click", () => router.navigate("review"));
+        this.querySelector("#openCurrentReview")?.addEventListener("click", () => {
+            router.navigate(review.status === "available" ? "review" : "lesson");
+        });
     }
 }
 
