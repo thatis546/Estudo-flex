@@ -1,4 +1,4 @@
-const COMPONENT_VERSION = "0.9.0";
+const COMPONENT_VERSION = "0.9.1";
 
 export const COMPONENT_MODULES = Object.freeze([
     { path: "./layout/ef-header.js", tag: "ef-header", area: "layout" },
@@ -19,6 +19,7 @@ export const COMPONENT_MODULES = Object.freeze([
     { path: "./languages/ef-language-diagnostic.js", tag: "ef-language-diagnostic", area: "languages" },
 
     { path: "./review/ef-review-page.js", tag: "ef-review-page", area: "review" },
+    { path: "./lesson/ef-lesson-page.js", tag: "ef-lesson-page", area: "lesson" },
 
     { path: "./profile/ef-profile-page.js", tag: "ef-profile-page", area: "profile" },
     { path: "./profile/ef-profile-card.js", tag: "ef-profile-card", area: "profile" },
