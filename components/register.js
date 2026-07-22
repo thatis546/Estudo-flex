@@ -1,4 +1,4 @@
-const COMPONENT_VERSION = "0.8.2";
+const COMPONENT_VERSION = "0.9.0";
 
 export const COMPONENT_MODULES = Object.freeze([
     { path: "./layout/ef-header.js", tag: "ef-header", area: "layout" },
