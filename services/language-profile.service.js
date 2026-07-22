@@ -203,18 +203,41 @@ export function migrateInitialProfileToCurrentLanguage() {
     const code = state.profile?.language || state.currentLanguage;
     const record = ensureLanguageRecord(code);
     if (!record) return null;
-    record.learningProfile = {
-        ...createEmptyLanguageProfile(state.profile),
-        goal: state.profile.goal || "",
-        goalDescription: state.profile.goalDescription || "",
-        useCase: state.profile.useCase || "",
-        contact: state.profile.contact || "",
-        dailyMinutes: Number(state.profile.dailyMinutes) || 0,
-        lifeContext: state.profile.lifeContext || "",
-        learningStyle: state.profile.learningStyle || "",
-        goalDetails: clone(state.profile.goalDetails || {})
+
+    const current = record.learningProfile || createEmptyLanguageProfile(state.profile);
+    const source = createEmptyLanguageProfile(state.profile);
+    const choose = (existing, incoming) => {
+        const existingText = String(existing ?? "").trim();
+        const incomingText = String(incoming ?? "").trim();
+        return existingText || incomingText;
     };
-    if (state.profile.levelResult?.completedAt && state.profile.levelResult?.journeyId) {
+    const sourceDetails = state.profile.goalDetails || {};
+    const currentDetails = current.goalDetails || {};
+
+    record.learningProfile = {
+        ...source,
+        ...current,
+        goal: choose(current.goal, state.profile.goal),
+        goalDescription: choose(current.goalDescription, state.profile.goalDescription),
+        useCase: choose(current.useCase, state.profile.useCase),
+        contact: choose(current.contact, state.profile.contact),
+        dailyMinutes: Math.max(0, Number(current.dailyMinutes || state.profile.dailyMinutes) || 0),
+        lifeContext: choose(current.lifeContext, state.profile.lifeContext),
+        learningStyle: choose(current.learningStyle, state.profile.learningStyle),
+        supportMode: choose(current.supportMode, state.profile.supportMode),
+        goalDetails: {
+            ...sourceDetails,
+            ...currentDetails,
+            deadline: choose(currentDetails.deadline, sourceDetails.deadline),
+            frequency: choose(currentDetails.frequency, sourceDetails.frequency),
+            interests: [...new Set([
+                ...(Array.isArray(currentDetails.interests) ? currentDetails.interests : []),
+                ...(Array.isArray(sourceDetails.interests) ? sourceDetails.interests : [])
+            ].map((item) => String(item).trim()).filter(Boolean))]
+        }
+    };
+
+    if (!record.diagnosticResult?.completedAt && state.profile.levelResult?.completedAt && state.profile.levelResult?.journeyId) {
         record.journeyId = state.profile.levelResult.journeyId;
         record.journeyLabel = getJourneyLabel(record.journeyId);
         record.level = record.journeyLabel;
@@ -224,6 +247,7 @@ export function migrateInitialProfileToCurrentLanguage() {
         record.setupStatus = "ready";
         record.dailyPlan = clone(state.profile.dailyPlan || buildLanguageDailyPlan(record));
     }
+    syncProfileFromLanguage(record);
     storage.save();
     return record;
 }

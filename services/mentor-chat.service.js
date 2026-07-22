@@ -3,6 +3,7 @@ import { state } from "../core/state.js";
 import { storage } from "../core/storage.js";
 import { mentor } from "./mentor.service.js";
 import { addAIMemory } from "./profile-privacy.service.js";
+import { api } from "../core/api.js";
 
 const gemini = new GeminiClient({ timeoutMs: 40000 });
 
@@ -102,5 +103,65 @@ export async function sendMentorMessage(message, { signal } = {}) {
         }
     }
 
+    return { userMessage, assistantMessage, payload };
+}
+
+
+export const MENTOR_ACTIVITIES = Object.freeze([
+    { id: "explain", icon: "💡", title: "Explicar uma dúvida", prompt: "Explique de forma simples e contextualizada: " },
+    { id: "correct", icon: "✍️", title: "Corrigir um texto", prompt: "Corrija o texto abaixo, preserve minha intenção e explique os principais ajustes: " },
+    { id: "vocabulary", icon: "🧠", title: "Revisar vocabulário", prompt: "Crie uma revisão curta do meu vocabulário vivo com exemplos ligados ao meu objetivo." },
+    { id: "exercise", icon: "🧩", title: "Criar uma atividade", prompt: "Crie uma atividade curta adequada à minha jornada e só mostre a resposta depois que eu tentar." },
+    { id: "scenario", icon: "🎭", title: "Simular uma situação em texto", prompt: "Inicie uma simulação em texto ligada ao meu contexto de uso. Faça uma fala por vez e espere minha resposta." },
+    { id: "image", icon: "🖼️", title: "Descrever uma imagem", prompt: "Ajude-me a descrever esta imagem no idioma estudado. Faça perguntas e corrija minha tentativa." }
+]);
+
+export async function sendMentorImageActivity(file, instruction = "", { signal } = {}) {
+    if (!(file instanceof File)) throw new Error("Selecione uma imagem.");
+    if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) throw new Error("Use uma imagem PNG, JPG ou WebP.");
+    if (file.size > 10 * 1024 * 1024) throw new Error("A imagem deve ter no máximo 10 MB.");
+
+    const summary = mentor.getSummary();
+    const conversation = getConversationStore(summary.languageCode || "global");
+    const cleanInstruction = String(instruction || "").trim();
+    const userText = cleanInstruction || "Quero praticar a descrição desta imagem.";
+    const userMessage = {
+        id: globalThis.crypto?.randomUUID?.() || `image-${Date.now()}`,
+        role: "user",
+        text: `🖼️ ${userText}`,
+        createdAt: new Date().toISOString(),
+        attachment: { name: file.name, type: file.type }
+    };
+    conversation.push(userMessage);
+    storage.save();
+
+    const formData = new FormData();
+    formData.append("image", file, file.name || "mentor-image.webp");
+    formData.append("instruction", userText);
+    formData.append("context", JSON.stringify(summary));
+
+    let payload;
+    try {
+        payload = await api("mentor/image-description", {
+            method: "POST", body: formData, signal, timeoutMs: 60000
+        });
+    } catch (error) {
+        payload = {
+            text: "A imagem foi selecionada, mas o backend multimodal ainda não está disponível. Quando ele estiver conectado, o Mentor fará perguntas de descrição e corrigirá sua resposta.",
+            offline: true,
+            error: error.message
+        };
+    }
+
+    const assistantMessage = {
+        id: globalThis.crypto?.randomUUID?.() || `image-${Date.now()}-assistant`,
+        role: "assistant",
+        text: String(payload?.text || "Não foi possível analisar a imagem.").trim(),
+        createdAt: new Date().toISOString(),
+        offline: Boolean(payload?.offline)
+    };
+    conversation.push(assistantMessage);
+    conversation.splice(0, Math.max(0, conversation.length - 100));
+    storage.save();
     return { userMessage, assistantMessage, payload };
 }
