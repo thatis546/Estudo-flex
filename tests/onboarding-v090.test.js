@@ -101,3 +101,33 @@ test("Communication Lab e Mentor continuam em rotas e componentes distintos", as
     assert.ok(navbar.includes('data-route="mentor"'));
     assert.ok(navbar.includes('data-route="speaking"'));
 });
+
+test("passo 2 móvel mantém rolagem, ações alcançáveis e não rerenderiza a página ao marcar interesse", async () => {
+    const goals = await read("components/onboarding/ef-goals.js");
+    const css = await read("css/v091.css");
+    assert.ok(goals.includes("this.updateInterestControls()"));
+    assert.ok(!goals.includes("else this.selectedInterests.add(interest);\n                this.render();"));
+    assert.ok(css.includes(".goals-actions"));
+    assert.ok(css.includes("position: sticky"));
+    assert.ok(css.includes("height: 100dvh"));
+    assert.ok(css.includes(".goals-page fieldset.mentor-section"));
+});
+
+test("tempo, frequência e interesses são sincronizados para o registro independente do idioma", async () => {
+    const goals = await read("components/onboarding/ef-goals.js");
+    const onboarding = await read("components/onboarding/ef-onboarding.js");
+    const finish = await read("components/onboarding/ef-finish.js");
+    assert.ok(goals.includes("migrateInitialProfileToCurrentLanguage"));
+    assert.ok(onboarding.includes("migrateInitialProfileToCurrentLanguage"));
+    assert.ok(finish.includes("getEffectiveLearningProfile"));
+    assert.ok(finish.includes("migrateInitialProfileToCurrentLanguage"));
+});
+
+test("Home bloqueia revisão antes da primeira atividade", async () => {
+    const home = await read("components/home/ef-home-page.js");
+    const review = await read("components/review/ef-review-page.js");
+    assert.ok(home.includes("Inicie uma atividade antes da revisão"));
+    assert.ok(home.includes('router.navigate("lesson")'));
+    assert.ok(review.includes("A revisão ainda não foi liberada"));
+    assert.ok(review.includes("sourceActivityTitle"));
+});

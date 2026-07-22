@@ -40,3 +40,18 @@ test("toJSON devolve cópia isolada", () => {
     snapshot.profile.name = "Alterado";
     assert.equal(state.profile.name, "Ana");
 });
+
+test("remove filas de revisão antigas sem atividade de origem", () => {
+    state.initialize({
+        currentLanguage: "en",
+        profile: { language: "en" },
+        languages: [{
+            code: "en",
+            reviewQueue: [
+                { id: "legacy", front: "Hello", back: "Olá" },
+                { id: "valid", front: "Thanks", back: "Obrigada", sourceActivityId: "lesson-1", introducedAt: "2026-01-01" }
+            ]
+        }]
+    });
+    assert.deepEqual(state.getLanguage("en").reviewQueue.map((item) => item.id), ["valid"]);
+});
