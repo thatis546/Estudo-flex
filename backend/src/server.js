@@ -224,7 +224,7 @@ const cleanupTimer = setInterval(() => {
 cleanupTimer.unref?.();
 
 app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "estudo-flex-languages", version: "0.8.2" });
+    res.json({ ok: true, service: "estudo-flex-languages", version: "0.9.0" });
 });
 
 app.post("/api/gemini", async (req, res, next) => {
@@ -255,6 +255,39 @@ app.post("/api/gemini", async (req, res, next) => {
             achievementCandidate: structured.achievementCandidate && typeof structured.achievementCandidate === "object"
                 ? structured.achievementCandidate
                 : null
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+app.post("/api/mentor/image-description", upload.single("image"), async (req, res, next) => {
+    try {
+        assertMime(req.file, ALLOWED_IMAGE_MIME_TYPES, "imagem");
+        const instruction = String(req.body?.instruction || "Quero praticar a descrição desta imagem.").trim().slice(0, 3000);
+        let context = {};
+        try { context = JSON.parse(String(req.body?.context || "{}")); } catch { context = {}; }
+        const safeContext = JSON.stringify(context && typeof context === "object" ? context : {}).slice(0, 18000);
+        const prompt = [
+            "Você é o Mentor pedagógico do Estudo Flex Languages.",
+            "Analise a imagem e transforme-a em uma atividade de descrição, sem inventar elementos que não estejam visíveis.",
+            "Considere a jornada e o idioma do contexto. Faça uma pergunta inicial clara e dê no máximo três sugestões de vocabulário.",
+            "Não avalie pronúncia; esta é uma atividade textual do Mentor, separada do Communication Lab.",
+            `Solicitação do estudante: ${instruction}`,
+            `Contexto autorizado: ${safeContext}`
+        ].join("\n");
+        const result = await generateContent({
+            kind: "multimodal",
+            contents: [{ role: "user", parts: [inlinePart(req.file.buffer, req.file.mimetype), textPart(prompt)] }],
+            generationConfig: jsonGenerationConfig(mentorResponseSchema, 0.5)
+        });
+        const structured = parseJsonText(result.text);
+        if (!structured || typeof structured !== "object") throw httpError(502, "A atividade de imagem não veio no formato esperado.");
+        return res.json({
+            text: String(structured.text || "").trim(),
+            memories: Array.isArray(structured.memories) ? structured.memories.slice(0, 4) : [],
+            achievementCandidate: null
         });
     } catch (error) {
         next(error);
