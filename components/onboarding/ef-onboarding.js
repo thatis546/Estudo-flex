@@ -2,36 +2,34 @@ import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
 import { state, createEmptyDiagnosticResult } from "../../core/state.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
+import {
+    CONTACT_OPTIONS,
+    DAILY_MINUTES_OPTIONS,
+    LEARNING_STYLE_OPTIONS,
+    ONBOARDING_FLOW,
+    ONBOARDING_TUTORIAL_STEPS,
+    PURPOSE_OPTIONS,
+    SUPPORT_OPTIONS,
+    buildPurposeProfile,
+    getOnboardingOption
+} from "../../data/onboarding.js";
 
-const FLOW = [
-    "language",
-    "supportMode",
-    "goal",
-    "contact",
-    "dailyMinutes",
-    "lifeContext",
-    "learningStyle"
-];
-
-const SUPPORT_OPTIONS = [
-    ["pt", "Quero tudo explicado em português"],
-    ["guided", "Quero frases curtas no idioma com tradução rápida"],
-    ["immersive", "Pode usar mais o idioma e me ajudar quando eu travar"]
-];
-
-function normalizeText(value) {
-    return String(value ?? "")
-        .trim()
-        .toLocaleLowerCase("pt-BR")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-}
+const QUESTIONS = Object.freeze({
+    language: "Qual idioma você quer aprender primeiro?",
+    supportMode: "Como você prefere receber apoio durante as atividades?",
+    goal: "Para que você quer usar esta língua primeiro?",
+    contact: "Qual frase descreve melhor seu contato atual com esta língua?",
+    dailyMinutes: "Quanto tempo cabe de verdade na sua rotina diária?",
+    learningStyle: "Como você acredita que aprende melhor?"
+});
 
 class EFOnboarding extends HTMLElement {
     constructor() {
         super();
         this.chatStep = 0;
+        this.tutorialStep = 0;
         this.sessionToken = 0;
+        this.pendingAnswer = null;
     }
 
     connectedCallback() {}
@@ -41,19 +39,67 @@ class EFOnboarding extends HTMLElement {
             router.navigate("welcome", "replace");
             return;
         }
-
         this.chatStep = this.findFirstIncompleteStep();
+        this.pendingAnswer = null;
+        if (!state.profile.onboardingTutorialSeen) {
+            this.tutorialStep = 0;
+            this.renderTutorial();
+            return;
+        }
         this.startChat(++this.sessionToken);
     }
 
     findFirstIncompleteStep() {
-        const storedStep = Number(state.profile.onboardingProgress?.step);
-        const firstMissing = FLOW.findIndex((key) => {
+        const firstMissing = ONBOARDING_FLOW.findIndex((key) => {
             const value = state.profile[key];
             return key === "dailyMinutes" ? Number(value) <= 0 : !String(value ?? "").trim();
         });
         if (firstMissing >= 0) return firstMissing;
-        return Number.isInteger(storedStep) ? Math.min(storedStep, FLOW.length) : FLOW.length;
+        const storedStep = Number(state.profile.onboardingProgress?.step);
+        return Number.isInteger(storedStep)
+            ? Math.min(storedStep, ONBOARDING_FLOW.length)
+            : ONBOARDING_FLOW.length;
+    }
+
+    renderTutorial() {
+        const step = ONBOARDING_TUTORIAL_STEPS[this.tutorialStep];
+        const last = this.tutorialStep === ONBOARDING_TUTORIAL_STEPS.length - 1;
+        this.innerHTML = `
+            <section class="onboarding-tutorial" aria-labelledby="tutorialTitle">
+                <div class="onboarding-tutorial__topbar">
+                    <p class="eyebrow">COMO FUNCIONA</p>
+                    <button id="skipTutorial" type="button" class="text-button">Pular passo a passo</button>
+                </div>
+                <article class="card onboarding-tutorial__card">
+                    <span class="onboarding-tutorial__icon" aria-hidden="true">${step.icon}</span>
+                    <p class="onboarding-tutorial__counter">${this.tutorialStep + 1} de ${ONBOARDING_TUTORIAL_STEPS.length}</p>
+                    <h1 id="tutorialTitle">${step.title}</h1>
+                    <p>${step.description}</p>
+                    <div class="onboarding-tutorial__example" aria-hidden="true">
+                        <span class="quick-reply selected">Exemplo de resposta</span>
+                        <span class="primary compact">Confirmar resposta</span>
+                    </div>
+                </article>
+                <div class="onboarding-tutorial__dots" aria-hidden="true">
+                    ${ONBOARDING_TUTORIAL_STEPS.map((_, index) => `<span class="${index === this.tutorialStep ? "is-active" : ""}"></span>`).join("")}
+                </div>
+                <button id="nextTutorial" type="button" class="primary full">${last ? "Começar configuração" : "Próximo"}</button>
+            </section>
+        `;
+        this.querySelector("#skipTutorial")?.addEventListener("click", () => this.finishTutorial());
+        this.querySelector("#nextTutorial")?.addEventListener("click", () => {
+            if (last) this.finishTutorial();
+            else {
+                this.tutorialStep += 1;
+                this.renderTutorial();
+            }
+        });
+    }
+
+    finishTutorial() {
+        state.updateProfile({ onboardingTutorialSeen: true });
+        storage.save();
+        this.startChat(++this.sessionToken);
     }
 
     wait(ms, token) {
@@ -63,165 +109,184 @@ class EFOnboarding extends HTMLElement {
     }
 
     async startChat(token) {
+        this.pendingAnswer = null;
         this.innerHTML = `
-            <div class="screen-header">
-                <button id="backButton" type="button" class="back-button" aria-label="Voltar">←</button>
-                <div>
-                    <p class="eyebrow">CONVERSA INICIAL</p>
-                    <h2 id="chatMentorName">Estudo Flex</h2>
+            <section class="onboarding-chat-shell" aria-labelledby="onboardingChatTitle">
+                <header class="onboarding-chat-header">
+                    <button id="backButton" type="button" class="back-button" aria-label="Voltar para a pergunta anterior">←</button>
+                    <div>
+                        <p class="eyebrow">CONVERSA INICIAL</p>
+                        <h1 id="onboardingChatTitle">Estudo Flex</h1>
+                    </div>
+                    <button id="helpButton" type="button" class="text-button compact" aria-label="Ver novamente o passo a passo">Ajuda</button>
+                </header>
+                <div class="progress-track" aria-label="Progresso da configuração"><span id="chatProgress"></span></div>
+                <div class="onboarding-chat-scroll" tabindex="0">
+                    <div id="chatLog" class="chat-log onboarding-chat-log" aria-live="polite"></div>
+                    <div id="quickReplies" class="onboarding-option-grid" aria-label="Opções de resposta"></div>
+                    <div id="selectionReview" class="onboarding-selection-review" hidden>
+                        <small>Resposta selecionada</small>
+                        <strong id="selectionLabel"></strong>
+                        <p>Confira a opção antes de enviar. Você ainda pode escolher outra.</p>
+                        <button id="confirmAnswer" type="button" class="primary full">Confirmar resposta</button>
+                    </div>
                 </div>
-            </div>
-            <div class="progress-track" aria-label="Progresso da configuração"><span id="chatProgress"></span></div>
-            <div id="chatLog" class="chat-log" aria-live="polite"></div>
-            <div id="quickReplies" class="quick-replies"></div>
-            <div class="composer">
-                <input id="chatInput" aria-label="Resposta para a pergunta atual" placeholder="Ou responda com suas palavras" autocomplete="off">
-                <button id="sendButton" type="button" class="primary compact">Enviar</button>
-            </div>
-            <button id="pauseButton" type="button" class="text-button full">Continuar depois</button>
+                <footer class="onboarding-chat-footer">
+                    <button id="pauseButton" type="button" class="secondary full">Continuar depois pela Home</button>
+                </footer>
+            </section>
         `;
 
-        this.querySelector("#backButton").addEventListener("click", () => this.goBack());
-        this.querySelector("#pauseButton").addEventListener("click", () => this.pause());
-        this.querySelector("#sendButton").addEventListener("click", () => this.sendText());
-        this.querySelector("#chatInput").addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                this.sendText();
-            }
+        this.querySelector("#backButton")?.addEventListener("click", () => this.goBack());
+        this.querySelector("#pauseButton")?.addEventListener("click", () => this.pause());
+        this.querySelector("#helpButton")?.addEventListener("click", () => {
+            this.tutorialStep = 0;
+            this.renderTutorial();
         });
+        this.querySelector("#confirmAnswer")?.addEventListener("click", () => this.confirmPendingAnswer());
 
         const userName = state.profile.name || "estudante";
         if (this.chatStep === 0) {
             this.addMessage(`Olá, ${userName}! 😊`, "ai");
-            if (!(await this.wait(350, token))) return;
-            this.addMessage("Vou fazer algumas perguntas rápidas para montar seu plano.", "ai");
+            if (!(await this.wait(250, token))) return;
+            this.addMessage("Você escolherá uma opção por vez e confirmará antes de enviá-la.", "ai");
         } else {
-            this.addMessage(`Bem-vindo de volta, ${userName}! Vamos continuar de onde você parou.`, "ai");
+            this.addMessage(`Bem-vindo de volta, ${userName}! Sua configuração está salva.`, "ai");
         }
-
-        if (!(await this.wait(250, token))) return;
+        if (!(await this.wait(180, token))) return;
         this.ask();
     }
 
     ask() {
-        if (this.chatStep >= FLOW.length) {
+        if (this.chatStep >= ONBOARDING_FLOW.length) {
             state.updateProfile({
                 onboardingProgress: {
-                    step: FLOW.length,
+                    step: ONBOARDING_FLOW.length,
                     paused: false,
                     updatedAt: new Date().toISOString()
                 }
             });
             storage.save();
-            const language = EF_LANGUAGES[state.profile.language];
-            this.addMessage(
-                language
-                    ? `Ótimo! ${language.mentor} já tem o contexto inicial. Agora vamos definir seus objetivos.`
-                    : "Ótimo! Agora vamos definir seus objetivos.",
-                "ai"
-            );
-            window.setTimeout(() => router.navigate("goals"), 650);
+            this.addMessage("Ótimo! Agora escolha prazo, frequência e assuntos que devem aparecer nas atividades.", "ai");
+            window.setTimeout(() => router.navigate("goals"), 500);
             return;
         }
 
-        const key = FLOW[this.chatStep];
+        const key = ONBOARDING_FLOW[this.chatStep];
         const progressBar = this.querySelector("#chatProgress");
-        if (progressBar) progressBar.style.width = `${((this.chatStep + 1) / FLOW.length) * 100}%`;
-
-        if (key === "language") {
-            this.querySelector("#chatMentorName").textContent = "Estudo Flex";
-            this.addMessage("Qual idioma você quer aprender primeiro?", "ai");
-            this.renderLanguages();
-            return;
-        }
-
-        if (key === "supportMode") {
-            this.addMessage("Como você prefere que eu me comunique com você?", "ai");
-            this.renderPairs(SUPPORT_OPTIONS);
-            return;
-        }
+        if (progressBar) progressBar.style.width = `${((this.chatStep + 1) / ONBOARDING_FLOW.length) * 100}%`;
+        this.pendingAnswer = null;
+        this.updateSelectionReview();
 
         const language = EF_LANGUAGES[state.profile.language];
-        if (!language) {
-            this.showToast("O idioma salvo não é válido. Escolha novamente.");
-            state.updateProfile({ language: "" });
-            state.currentLanguage = "";
-            this.chatStep = 0;
-            storage.save();
-            this.startChat(++this.sessionToken);
+        const title = this.querySelector("#onboardingChatTitle");
+        if (title) title.textContent = key === "language" ? "Estudo Flex" : language?.mentor || "Estudo Flex";
+        this.addMessage(QUESTIONS[key], "ai");
+        this.renderOptions(key);
+    }
+
+    optionsFor(key) {
+        if (key === "language") {
+            return Object.entries(EF_LANGUAGES).map(([value, language]) => ({
+                value,
+                label: `${language.flag || "🌍"} ${language.name}`
+            }));
+        }
+        if (key === "supportMode") return SUPPORT_OPTIONS;
+        if (key === "goal") return PURPOSE_OPTIONS;
+        if (key === "contact") return CONTACT_OPTIONS;
+        if (key === "dailyMinutes") return DAILY_MINUTES_OPTIONS;
+        if (key === "learningStyle") return LEARNING_STYLE_OPTIONS;
+        return [];
+    }
+
+    renderOptions(key) {
+        const box = this.querySelector("#quickReplies");
+        if (!box) return;
+        box.innerHTML = "";
+        this.optionsFor(key).forEach((option) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "quick-reply onboarding-option";
+            button.dataset.value = String(option.value);
+            button.textContent = option.label;
+            button.addEventListener("click", () => this.selectPendingAnswer(option, button));
+            box.appendChild(button);
+        });
+    }
+
+    selectPendingAnswer(option, button) {
+        this.pendingAnswer = { value: option.value, label: option.label };
+        this.querySelectorAll(".onboarding-option").forEach((item) => {
+            const selected = item === button;
+            item.classList.toggle("selected", selected);
+            item.setAttribute("aria-pressed", String(selected));
+        });
+        this.updateSelectionReview();
+        this.querySelector("#confirmAnswer")?.focus({ preventScroll: true });
+    }
+
+    updateSelectionReview() {
+        const review = this.querySelector("#selectionReview");
+        const label = this.querySelector("#selectionLabel");
+        if (!review || !label) return;
+        review.hidden = !this.pendingAnswer;
+        label.textContent = this.pendingAnswer?.label || "";
+        if (this.pendingAnswer) review.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    confirmPendingAnswer() {
+        if (!this.pendingAnswer) {
+            this.showToast("Escolha uma opção antes de confirmar.");
             return;
         }
-
-        this.querySelector("#chatMentorName").textContent = language.mentor;
-        this.addMessage(this.getQuestion(language, key), "ai");
-        this.renderLocalized(language, key);
+        this.commitAnswer(this.pendingAnswer.value, this.pendingAnswer.label);
     }
 
-    getQuestion(language, key) {
-        const supportMode = state.profile.supportMode;
-        const target = language.questions?.[key] || language.ptQuestions?.[key] || "Conte um pouco mais.";
-        const translated = language.ptQuestions?.[key] || target;
-        if (supportMode === "pt") return translated;
-        if (supportMode === "guided") return `${target}\n(${translated})`;
-        return target;
-    }
-
-    answer(value, display = value) {
-        const key = FLOW[this.chatStep];
+    commitAnswer(value, display) {
+        const key = ONBOARDING_FLOW[this.chatStep];
         if (!key) return;
-
-        let normalizedValue = value;
-        if (key === "dailyMinutes") {
-            const minutes = Number(String(value).match(/\d+/)?.[0]);
-            if (!Number.isFinite(minutes) || minutes < 5 || minutes > 240) {
-                this.showToast("Informe um tempo entre 5 e 240 minutos.");
-                return;
-            }
-            normalizedValue = minutes;
-        }
-
-        if (key === "language" && !EF_LANGUAGES[normalizedValue]) {
-            this.showToast("Escolha um dos idiomas disponíveis.");
-            return;
-        }
-
-        if (key === "supportMode" && !SUPPORT_OPTIONS.some(([code]) => code === normalizedValue)) {
-            this.showToast("Escolha um dos modos de apoio disponíveis.");
+        const validOption = this.optionsFor(key).some((item) => String(item.value) === String(value));
+        if (!validOption) {
+            this.showToast("A opção selecionada não é válida.");
             return;
         }
 
         this.addMessage(display, "user");
-        this.querySelector("#quickReplies").innerHTML = "";
-
         const previousLanguage = state.profile.language;
-        state.updateProfile({ [key]: normalizedValue });
+        let patch = { [key]: key === "dailyMinutes" ? Number(value) : value };
+        if (key === "goal") patch = { ...patch, ...buildPurposeProfile(value) };
+        state.updateProfile(patch);
 
         if (key === "language") {
-            if (previousLanguage && previousLanguage !== normalizedValue && !state.profile.onboardingComplete) {
+            if (previousLanguage && previousLanguage !== value && !state.profile.onboardingComplete) {
                 state.languages = state.languages.filter((item) => item.code !== previousLanguage);
             }
-            const language = EF_LANGUAGES[normalizedValue];
-            state.setCurrentLanguage(normalizedValue);
-            const existingLanguage = state.getLanguage(normalizedValue);
+            const language = EF_LANGUAGES[value];
+            state.setCurrentLanguage(value);
+            const existingLanguage = state.getLanguage(value);
             state.addLanguage({
-                code: normalizedValue,
+                code: value,
                 name: language.name,
                 flag: language.flag || "🌍",
+                country: language.country || "",
                 mentor: language.mentor || "",
-                level: existingLanguage?.level || "",
+                journeyId: existingLanguage?.journeyId || "",
+                journeyLabel: existingLanguage?.journeyLabel || "",
                 setupComplete: Boolean(existingLanguage?.setupComplete),
                 setupStatus: existingLanguage?.setupStatus || "setup-required",
+                learningProfile: existingLanguage?.learningProfile,
+                diagnosticResult: existingLanguage?.diagnosticResult,
+                diagnosticAnswers: existingLanguage?.diagnosticAnswers || [],
+                diagnosticProgress: existingLanguage?.diagnosticProgress,
+                dailyPlan: existingLanguage?.dailyPlan,
+                reviewQueue: existingLanguage?.reviewQueue || [],
+                professional: existingLanguage?.professional,
+                communicationLab: existingLanguage?.communicationLab,
                 xp: existingLanguage?.xp || 0,
                 progress: existingLanguage?.progress || 0,
-                diagnosticScore: existingLanguage?.diagnosticScore || 0,
-                diagnosticAnswers: existingLanguage?.diagnosticAnswers || [],
-                levelResult: existingLanguage?.levelResult,
                 stats: existingLanguage?.stats || {}
             });
-            window.dispatchEvent(new CustomEvent("language-changed", {
-                detail: { code: normalizedValue, language }
-            }));
         }
 
         this.chatStep += 1;
@@ -233,75 +298,7 @@ class EFOnboarding extends HTMLElement {
             }
         });
         storage.save();
-        window.setTimeout(() => this.ask(), 250);
-    }
-
-    renderLanguages() {
-        this.renderPairs(
-            Object.entries(EF_LANGUAGES).map(([code, language]) => [code, language.name])
-        );
-    }
-
-    renderLocalized(language, key) {
-        const targetOptions = Array.isArray(language.options?.[key]) ? language.options[key] : [];
-        const translatedOptions = Array.isArray(language.ptOptions?.[key]) ? language.ptOptions[key] : [];
-        const supportMode = state.profile.supportMode;
-        const items = targetOptions.map((value, index) => {
-            const translated = translatedOptions[index] || value;
-            const display = supportMode === "pt"
-                ? translated
-                : supportMode === "guided"
-                    ? `${value} (${translated})`
-                    : value;
-            return [value, display];
-        });
-        this.renderPairs(items);
-    }
-
-    renderPairs(items) {
-        const box = this.querySelector("#quickReplies");
-        if (!box) return;
-        box.innerHTML = "";
-        items.forEach(([value, display]) => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "quick-reply";
-            button.textContent = display;
-            button.addEventListener("click", () => this.answer(value, display));
-            box.appendChild(button);
-        });
-    }
-
-    sendText() {
-        const input = this.querySelector("#chatInput");
-        const text = input?.value.trim();
-        if (!text) return;
-
-        const key = FLOW[this.chatStep];
-        if (key === "language") {
-            const normalized = normalizeText(text);
-            const match = Object.entries(EF_LANGUAGES).find(([code, language]) =>
-                normalizeText(code) === normalized || normalizeText(language.name) === normalized
-            );
-            if (!match) {
-                this.showToast("Digite ou selecione um dos idiomas disponíveis.");
-                return;
-            }
-            this.answer(match[0], match[1].name);
-        } else if (key === "supportMode") {
-            const normalized = normalizeText(text);
-            const match = SUPPORT_OPTIONS.find(([code, label]) =>
-                normalizeText(code) === normalized || normalizeText(label).includes(normalized)
-            );
-            if (!match) {
-                this.showToast("Selecione um dos modos de apoio sugeridos.");
-                return;
-            }
-            this.answer(match[0], match[1]);
-        } else {
-            this.answer(text, text);
-        }
-        input.value = "";
+        window.setTimeout(() => this.ask(), 220);
     }
 
     addMessage(text, type) {
@@ -311,30 +308,35 @@ class EFOnboarding extends HTMLElement {
         message.className = `message ${type}`;
         message.textContent = text;
         chatLog.appendChild(message);
-        chatLog.scrollTop = chatLog.scrollHeight;
+        const scroll = this.querySelector(".onboarding-chat-scroll");
+        requestAnimationFrame(() => {
+            if (scroll) scroll.scrollTop = scroll.scrollHeight;
+        });
     }
 
     goBack() {
         if (this.chatStep <= 0) {
-            this.pause();
+            router.navigate("welcome");
             return;
         }
         const previousStep = this.chatStep - 1;
-        const previousKey = FLOW[previousStep];
-        state.updateProfile({
+        const previousKey = ONBOARDING_FLOW[previousStep];
+        const patch = {
             [previousKey]: previousKey === "dailyMinutes" ? 0 : "",
             onboardingProgress: {
                 step: previousStep,
                 paused: false,
                 updatedAt: new Date().toISOString()
             }
-        });
+        };
+        if (previousKey === "goal") {
+            Object.assign(patch, { goalDescription: "", useCase: "", lifeContext: "" });
+        }
+        state.updateProfile(patch);
         if (previousKey === "language") {
             const languageToRemove = state.currentLanguage || state.profile.language;
             if (languageToRemove && !state.profile.onboardingComplete) {
-                state.languages = state.languages.filter(
-                    (item) => item.code !== languageToRemove
-                );
+                state.languages = state.languages.filter((item) => item.code !== languageToRemove);
             }
             state.setCurrentLanguage("");
             state.updateProfile({
@@ -344,12 +346,7 @@ class EFOnboarding extends HTMLElement {
                 levelTag: "",
                 diagnosticScore: 0,
                 diagnosticAnswers: [],
-                diagnosticProgress: {
-                    step: 0,
-                    answers: [],
-                    scores: [],
-                    questionIds: []
-                },
+                diagnosticProgress: { step: 0, answers: [], scores: [], questionIds: [] },
                 levelResult: createEmptyDiagnosticResult()
             });
         }
@@ -368,7 +365,7 @@ class EFOnboarding extends HTMLElement {
             }
         });
         storage.save();
-        router.navigate("welcome");
+        router.navigate("home");
     }
 
     showToast(message) {

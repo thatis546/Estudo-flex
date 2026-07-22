@@ -1,11 +1,19 @@
 import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
 import { state } from "../../core/state.js";
+import { getPurposeSummary } from "../../core/profile-options.js";
 
 const DEFAULT_INTERESTS = [
-    "Filmes", "Música", "Tecnologia", "Engenharia",
-    "Negócios", "Viagens", "Esportes", "Gastronomia"
+    "Filmes e séries", "Música", "Tecnologia", "Engenharia",
+    "Negócios", "Viagens", "Esportes", "Gastronomia",
+    "História", "Ciência", "Literatura", "Vida cotidiana"
 ];
+
+const DISCOVER_INTERESTS = "Descobrir meus interesses aos poucos";
+
+const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+}[character]));
 
 class EFGoals extends HTMLElement {
     constructor() {
@@ -26,65 +34,82 @@ class EFGoals extends HTMLElement {
         const saved = state.profile.goalDetails || {};
         this.selectedDeadline = saved.deadline || "";
         this.selectedFrequency = saved.frequency || "";
-        this.selectedInterests = new Set(Array.isArray(saved.interests) ? saved.interests.filter(Boolean) : []);
-        this.availableInterests = Array.from(new Set([...DEFAULT_INTERESTS, ...this.selectedInterests]));
+        this.selectedInterests = new Set(
+            Array.isArray(saved.interests) ? saved.interests.filter(Boolean) : []
+        );
+        this.availableInterests = Array.from(new Set([
+            ...DEFAULT_INTERESTS,
+            ...this.selectedInterests
+        ])).filter((item) => item !== DISCOVER_INTERESTS);
         this.render();
     }
 
     render() {
+        const purpose = getPurposeSummary(state.profile.goal);
+        const purposeLabel = purpose?.label || "Objetivo ainda não escolhido";
+        const useCase = state.profile.useCase || purpose?.useCase || "A situação de uso será refinada durante as atividades.";
+
         this.innerHTML = `
-            <div class="screen-header">
-                <p class="eyebrow">PASSO 2 DE 3</p>
-                <h1>Para que esta língua fará parte da sua vida?</h1>
-                <p>O objetivo precisa ser específico para este idioma. Outros idiomas terão suas próprias respostas.</p>
-            </div>
-            <article class="card">
-                <div class="goals-body">
-                    <div class="form-field">
-                        <label for="goalDescription">Explique por que você quer aprender esta língua</label>
-                        <textarea id="goalDescription" rows="4" maxlength="500" placeholder="Ex.: quero estudar engenharia na França e conseguir acompanhar aulas, projetos e conversas com colegas."></textarea>
-                        <small>Quanto mais concreto, melhor será a adaptação do plano.</small>
-                    </div>
-                    <div class="form-field">
-                        <label for="useCase">Em qual situação real você pretende usá-la?</label>
-                        <textarea id="useCase" rows="4" maxlength="500" placeholder="Ex.: universidade, reuniões de trabalho, viagens, conversar com familiares ou morar no exterior."></textarea>
-                    </div>
+            <section class="goals-page" aria-labelledby="goalsTitle">
+                <header class="screen-header">
+                    <p class="eyebrow">PASSO 2 DE 3</p>
+                    <h1 id="goalsTitle">Complete a rotina deste idioma</h1>
+                    <p>Seu objetivo já foi escolhido na conversa inicial. Agora faltam apenas prazo, frequência e assuntos.</p>
+                </header>
+
+                <article class="card goals-purpose-summary">
+                    <small>Finalidade escolhida</small>
+                    <h2>${escapeHTML(purposeLabel)}</h2>
+                    <p>${escapeHTML(useCase)}</p>
+                    <button id="editPurposeButton" type="button" class="text-button">Alterar essa resposta</button>
+                </article>
+
+                <article class="card goals-form-card">
                     <fieldset class="mentor-section">
-                        <legend class="slider-label">Qual é o seu prazo ideal?</legend>
-                        <div id="deadlineGroup" class="quick-replies">
+                        <legend class="slider-label">Existe algum prazo importante?</legend>
+                        <div id="deadlineGroup" class="choice-grid choice-grid--compact">
                             ${this.optionButton("no-deadline", "Sem prazo fixo")}
-                            ${this.optionButton("3-months", "3 meses")}
-                            ${this.optionButton("6-months", "6 meses")}
-                            ${this.optionButton("1-year", "1 ano")}
+                            ${this.optionButton("3-months", "Até 3 meses")}
+                            ${this.optionButton("6-months", "Até 6 meses")}
+                            ${this.optionButton("1-year", "Até 1 ano")}
+                            ${this.optionButton("2-years", "Até 2 anos")}
                         </div>
                     </fieldset>
+
                     <fieldset class="mentor-section">
-                        <legend class="slider-label">Frequência ideal de estudo</legend>
-                        <div id="frequencyGroup" class="quick-replies">
-                            ${this.optionButton("3x", "3x por semana")}
-                            ${this.optionButton("5x", "5x por semana")}
+                        <legend class="slider-label">Quantos dias por semana você pretende estudar?</legend>
+                        <div id="frequencyGroup" class="choice-grid choice-grid--compact">
+                            ${this.optionButton("1x", "1 dia")}
+                            ${this.optionButton("2x", "2 dias")}
+                            ${this.optionButton("3x", "3 dias")}
+                            ${this.optionButton("5x", "5 dias")}
                             ${this.optionButton("daily", "Todos os dias")}
                         </div>
                     </fieldset>
+
                     <fieldset class="mentor-section">
-                        <legend class="slider-label">Assuntos do seu interesse para esta língua</legend>
-                        <p class="small-text goals-helper">Eles serão usados em exemplos, exercícios, revisões e conversas com o Mentor.</p>
-                        <div id="interestsGroup" class="tag-list"></div>
+                        <legend class="slider-label">Quais assuntos você gostaria de encontrar nas atividades?</legend>
+                        <p class="form-help">Você pode selecionar vários, adicionar um assunto próprio ou deixar o aplicativo descobrir isso com o uso.</p>
+                        <button id="discoverInterestsButton" type="button" class="choice-card choice-card--discover" aria-pressed="${this.selectedInterests.has(DISCOVER_INTERESTS)}">
+                            <strong>Quero descobrir meus interesses aos poucos</strong>
+                            <small>O Perfil Vivo observará quais temas ajudam você a continuar estudando.</small>
+                        </button>
+                        <div id="interestsGroup" class="tag-list" aria-label="Interesses disponíveis"></div>
                         <div class="tag-editor">
                             <label class="sr-only" for="customTagInput">Adicionar outro assunto</label>
                             <input id="customTagInput" type="text" maxlength="40" placeholder="Adicionar outro assunto...">
                             <button id="addTagButton" type="button" class="secondary compact">Adicionar</button>
                         </div>
                     </fieldset>
+                </article>
+
+                <div class="actions goals-actions">
+                    <button id="goalsBackButton" type="button" class="secondary">Voltar</button>
+                    <button id="goalsNextButton" type="button" class="primary">Avançar para o diagnóstico</button>
                 </div>
-            </article>
-            <div class="actions">
-                <button id="goalsNextButton" type="button" class="primary full">Avançar para o diagnóstico</button>
-            </div>
+            </section>
         `;
 
-        this.querySelector("#goalDescription").value = state.profile.goalDescription || "";
-        this.querySelector("#useCase").value = state.profile.useCase || "";
         this.renderInterests();
         this.bindEvents();
     }
@@ -95,18 +120,21 @@ class EFGoals extends HTMLElement {
 
     renderInterests() {
         const container = this.querySelector("#interestsGroup");
+        if (!container) return;
         container.innerHTML = "";
         this.availableInterests.forEach((interest) => {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "tag";
             button.textContent = interest;
-            button.classList.toggle("selected", this.selectedInterests.has(interest));
-            button.setAttribute("aria-pressed", String(this.selectedInterests.has(interest)));
+            const selected = this.selectedInterests.has(interest);
+            button.classList.toggle("selected", selected);
+            button.setAttribute("aria-pressed", String(selected));
             button.addEventListener("click", () => {
+                this.selectedInterests.delete(DISCOVER_INTERESTS);
                 if (this.selectedInterests.has(interest)) this.selectedInterests.delete(interest);
                 else this.selectedInterests.add(interest);
-                this.renderInterests();
+                this.render();
             });
             container.appendChild(button);
         });
@@ -115,6 +143,20 @@ class EFGoals extends HTMLElement {
     bindEvents() {
         this.bindSingleChoice("#deadlineGroup", "selectedDeadline");
         this.bindSingleChoice("#frequencyGroup", "selectedFrequency");
+
+        this.querySelector("#editPurposeButton")?.addEventListener("click", () => {
+            state.updateProfile({ onboardingProgress: { step: 2, paused: false, updatedAt: new Date().toISOString() } });
+            storage.save();
+            router.navigate("onboarding");
+        });
+
+        this.querySelector("#discoverInterestsButton")?.addEventListener("click", () => {
+            const active = this.selectedInterests.has(DISCOVER_INTERESTS);
+            this.selectedInterests.clear();
+            if (!active) this.selectedInterests.add(DISCOVER_INTERESTS);
+            this.render();
+        });
+
         const input = this.querySelector("#customTagInput");
         const add = () => {
             const value = input.value.trim().replace(/\s+/g, " ");
@@ -124,18 +166,30 @@ class EFGoals extends HTMLElement {
             );
             const interest = existing || value;
             if (!existing) this.availableInterests.push(interest);
+            this.selectedInterests.delete(DISCOVER_INTERESTS);
             this.selectedInterests.add(interest);
             input.value = "";
-            this.renderInterests();
+            this.render();
         };
-        this.querySelector("#addTagButton").addEventListener("click", add);
-        input.addEventListener("keydown", (event) => {
+        this.querySelector("#addTagButton")?.addEventListener("click", add);
+        input?.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 event.preventDefault();
                 add();
             }
         });
-        this.querySelector("#goalsNextButton").addEventListener("click", () => this.saveAndContinue());
+        this.querySelector("#goalsBackButton")?.addEventListener("click", () => {
+            state.updateProfile({
+                onboardingProgress: {
+                    step: 5,
+                    paused: false,
+                    updatedAt: new Date().toISOString()
+                }
+            });
+            storage.save();
+            router.navigate("onboarding");
+        });
+        this.querySelector("#goalsNextButton")?.addEventListener("click", () => this.saveAndContinue());
     }
 
     bindSingleChoice(selector, property) {
@@ -156,18 +210,13 @@ class EFGoals extends HTMLElement {
     }
 
     saveAndContinue() {
-        const goalDescription = this.querySelector("#goalDescription").value.trim();
-        const useCase = this.querySelector("#useCase").value.trim();
-        if (goalDescription.length < 12) return this.showToast("Explique um pouco melhor por que quer aprender esta língua.");
-        if (useCase.length < 8) return this.showToast("Informe ao menos uma situação real de uso.");
-        if (!this.selectedDeadline) return this.showToast("Selecione um prazo ideal.");
-        if (!this.selectedFrequency) return this.showToast("Escolha a frequência de estudos.");
-        if (this.selectedInterests.size === 0) return this.showToast("Selecione ao menos um assunto.");
+        if (!this.selectedDeadline) return this.showToast("Selecione um prazo ou marque que não há prazo fixo.");
+        if (!this.selectedFrequency) return this.showToast("Escolha quantos dias por semana pretende estudar.");
+        if (this.selectedInterests.size === 0) return this.showToast("Escolha ao menos um assunto ou a opção de descobrir depois.");
 
         state.updateProfile({
-            goalDescription,
-            useCase,
             goalDetails: {
+                ...(state.profile.goalDetails || {}),
                 deadline: this.selectedDeadline,
                 frequency: this.selectedFrequency,
                 interests: [...this.selectedInterests]
