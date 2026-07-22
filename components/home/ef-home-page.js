@@ -1,8 +1,14 @@
 import { state } from "../../core/state.js";
 import { router } from "../../core/router.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
-import { getCurrentLanguageRecord, isLanguageReady } from "../../services/language-profile.service.js";
+import {
+    getCurrentLanguageRecord,
+    getEffectiveLearningProfile,
+    isLanguageReady
+} from "../../services/language-profile.service.js";
 import { getProfessionalProgress, getUserTrack } from "../../services/professional.js";
+import { getContactDifficulty, hasCompletedLearningActivity } from "../../services/lesson.service.js";
+import { formatNextReview, getReviewAvailability } from "../../services/review.service.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(
     /[&<>"']/g,
@@ -17,15 +23,59 @@ class EFHomePage extends HTMLElement {
 
     connectedCallback() {
         this.render();
-        ["state-updated", "language-changed", "professional-track-changed", "xp-earned"].forEach((eventName) => {
+        ["state-updated", "language-changed", "professional-track-changed", "xp-earned", "learning-activity-completed"].forEach((eventName) => {
             window.addEventListener(eventName, this.refresh);
         });
     }
 
     disconnectedCallback() {
-        ["state-updated", "language-changed", "professional-track-changed", "xp-earned"].forEach((eventName) => {
+        ["state-updated", "language-changed", "professional-track-changed", "xp-earned", "learning-activity-completed"].forEach((eventName) => {
             window.removeEventListener(eventName, this.refresh);
         });
+    }
+
+    buildReviewCard(record, language, plan) {
+        const availability = getReviewAvailability(record);
+        const hasActivity = hasCompletedLearningActivity(record);
+        const learningProfile = getEffectiveLearningProfile(record, state.profile);
+        const difficulty = getContactDifficulty(learningProfile.contact);
+
+        if (!hasActivity || availability.status === "no-activity" || availability.status === "no-items") {
+            return `
+                <article class="home-action-card home-action-card--first-activity">
+                    <span class="home-action-icon" aria-hidden="true">1</span>
+                    <div>
+                        <small>Primeiro conteúdo · ${escapeHTML(difficulty.label)}</small>
+                        <h3>Inicie uma atividade antes da revisão</h3>
+                        <p>${escapeHTML(difficulty.instruction)} A revisão será criada somente com o conteúdo realmente estudado.</p>
+                    </div>
+                    <button id="startFirstActivityButton" type="button" class="primary full">Iniciar primeira atividade</button>
+                </article>`;
+        }
+
+        if (availability.status === "scheduled") {
+            return `
+                <article class="home-action-card home-action-card--review-waiting">
+                    <span class="home-action-icon" aria-hidden="true">🕒</span>
+                    <div>
+                        <small>Vocabulário Vivo · revisão programada</small>
+                        <h3>Nada para revisar agora</h3>
+                        <p>Próxima revisão: ${escapeHTML(formatNextReview(availability.nextReviewAt))}. O intervalo considera seu contato anterior e suas respostas.</p>
+                    </div>
+                    <button id="continueLearningButton" type="button" class="secondary full">Fazer conteúdo novo</button>
+                </article>`;
+        }
+
+        return `
+            <article class="home-action-card">
+                <span class="home-action-icon" aria-hidden="true">↻</span>
+                <div>
+                    <small>Vocabulário Vivo · ${availability.dueCount} ${availability.dueCount === 1 ? "item disponível" : "itens disponíveis"}</small>
+                    <h3>${escapeHTML(plan.review || `Revisão de ${language?.name || record.name}`)}</h3>
+                    <p>Revise apenas palavras e expressões que já apareceram em atividades concluídas.</p>
+                </div>
+                <button id="startReviewButton" type="button" class="primary full">Começar revisão</button>
+            </article>`;
     }
 
     render() {
@@ -37,7 +87,6 @@ class EFHomePage extends HTMLElement {
         const plan = record?.dailyPlan || profile.dailyPlan || {};
         const professionalTrack = getUserTrack();
         const professionalProgress = getProfessionalProgress();
-        const pendingReviews = Array.isArray(record?.reviewQueue) ? record.reviewQueue.length : 0;
         const onboardingComplete = state.isOnboardingCompleted();
         const onboardingPaused = Boolean(profile.onboardingProgress?.paused);
 
@@ -58,20 +107,10 @@ class EFHomePage extends HTMLElement {
                     <article class="card home-empty-action home-onboarding-resume">
                         <p class="eyebrow">PRIMEIROS PASSOS</p>
                         <h2>${onboardingPaused ? "Sua configuração está pausada" : "Termine a configuração inicial"}</h2>
-                        <p>As atividades só serão montadas depois que objetivo, rotina e diagnóstico deste idioma estiverem completos. Isso evita inventar nível, interesses ou tempo de estudo.</p>
+                        <p>As atividades só serão montadas depois que objetivo, rotina e diagnóstico deste idioma estiverem completos.</p>
                         <button id="resumeOnboardingButton" type="button" class="primary full">Continuar configuração</button>
                     </article>
-                    <article class="card home-preview-card">
-                        <h2>O que aparecerá aqui depois</h2>
-                        <ul>
-                            <li>Revisão rápida com conteúdo real.</li>
-                            <li>Plano do idioma escolhido.</li>
-                            <li>Communication Lab separado do Mentor.</li>
-                            <li>Trilha profissional com progresso próprio.</li>
-                        </ul>
-                    </article>
-                </section>
-            `;
+                </section>`;
             this.querySelector("#resumeOnboardingButton")?.addEventListener("click", () => router.navigate(router.getResumePage()));
             return;
         }
@@ -90,7 +129,7 @@ class EFHomePage extends HTMLElement {
                     <h1 class="learning-unit-title">Olá, ${escapeHTML(profile.name || "estudante")}!</h1>
                     <p class="learning-unit-description">
                         ${language ? `${escapeHTML(language.flag || "🌍")} ${escapeHTML(language.name)}` : "Selecione um idioma"}
-                        ${ready ? ` · ${escapeHTML(record.journeyLabel || "Jornada pendente")} · ${Number(record.learningProfile?.dailyMinutes) || 15} minutos` : ""}
+                        ${ready ? ` · ${escapeHTML(record.journeyLabel || "Jornada pendente")} · ${Number(getEffectiveLearningProfile(record, profile).dailyMinutes) || 15} minutos` : ""}
                     </p>
                 </article>
 
@@ -108,38 +147,29 @@ class EFHomePage extends HTMLElement {
                     </article>
                 ` : `
                     <section class="home-section" aria-labelledby="homeStudyTitle">
-                        <div class="home-section-heading">
-                            <div><p class="eyebrow">IDIOMA GERAL</p><h2 id="homeStudyTitle">Estudo de hoje</h2></div>
-                        </div>
+                        <div class="home-section-heading"><div><p class="eyebrow">IDIOMA GERAL</p><h2 id="homeStudyTitle">Estudo de hoje</h2></div></div>
                         <div class="home-action-grid">
-                            <article class="home-action-card">
-                                <span class="home-action-icon" aria-hidden="true">↻</span>
-                                <div><small>Vocabulário Vivo · ${pendingReviews || "primeira"} revisão</small><h3>${escapeHTML(plan.review || "Revisão rápida")}</h3><p>Revele a resposta e marque o que esqueceu, achou difícil ou lembrou.</p></div>
-                                <button id="startReviewButton" type="button" class="primary full">Começar revisão</button>
-                            </article>
+                            ${this.buildReviewCard(record, language, plan)}
                             <article class="home-action-card">
                                 <span class="home-action-icon" aria-hidden="true">▶</span>
-                                <div><small>Conteúdo novo</small><h3>${escapeHTML(plan.lesson || "Próximo conteúdo")}</h3><p>Veja os objetivos, a jornada e os próximos conteúdos deste idioma.</p></div>
-                                <button id="startLessonButton" type="button" class="secondary full">Abrir idioma</button>
+                                <div><small>Conteúdo novo</small><h3>${escapeHTML(plan.lesson || "Próxima atividade")}</h3><p>A dificuldade parte do contato informado e será ajustada pelo desempenho real.</p></div>
+                                <button id="startLessonButton" type="button" class="secondary full">Abrir atividade</button>
                             </article>
                             <article class="home-action-card">
                                 <span class="home-action-icon" aria-hidden="true">🎙️</span>
-                                <div><small>Communication Lab</small><h3>${escapeHTML(plan.communication || "Treino técnico de oratória")}</h3><p>Grave e transcreva sua fala para analisar ritmo, clareza, muletas, repetições, projeção e variedade lexical.</p></div>
+                                <div><small>Communication Lab</small><h3>${escapeHTML(plan.communication || "Treino técnico de oratória")}</h3><p>Analise ritmo, clareza, muletas, repetições, projeção e variedade lexical.</p></div>
                                 <button id="openSpeakingButton" type="button" class="secondary full">Abrir Communication Lab</button>
                             </article>
                             <article class="home-action-card home-action-card--mentor">
                                 <span class="home-action-icon" aria-hidden="true">💬</span>
-                                <div><small>Meu Mentor</small><h3>Conversa pedagógica em texto</h3><p>Tire dúvidas, peça explicações e receba atividades baseadas no Perfil Vivo e nas memórias que você autorizou.</p></div>
+                                <div><small>Meu Mentor</small><h3>Conversa pedagógica em texto</h3><p>Tire dúvidas, peça explicações e receba atividades baseadas no Perfil Vivo.</p></div>
                                 <button id="openMentorButton" type="button" class="secondary full">Conversar com Mentor</button>
                             </article>
                         </div>
-                    </section>
-                `}
+                    </section>`}
 
                 <section class="home-section" aria-labelledby="homeProfessionalTitle">
-                    <div class="home-section-heading">
-                        <div><p class="eyebrow">PROFESSIONAL LAB</p><h2 id="homeProfessionalTitle">Trilha profissional de ${escapeHTML(language?.name || "idioma")}</h2></div>
-                    </div>
+                    <div class="home-section-heading"><div><p class="eyebrow">PROFESSIONAL LAB</p><h2 id="homeProfessionalTitle">Trilha profissional de ${escapeHTML(language?.name || "idioma")}</h2></div></div>
                     <article class="home-professional-card">
                         <span class="home-professional-icon" aria-hidden="true">${escapeHTML(professionalTrack?.icon || "💼")}</span>
                         <div class="home-professional-content">
@@ -147,26 +177,21 @@ class EFHomePage extends HTMLElement {
                             <h3>${escapeHTML(professionalTrack?.title || "Escolha uma área profissional")}</h3>
                             <p>${escapeHTML(professionalTrack?.description || "A trilha fica separada do idioma geral e mantém progresso próprio para esta língua.")}</p>
                         </div>
-                        <button id="homeProfessionalButton" type="button" class="primary">
-                            ${professionalTrack ? "Começar ou continuar" : "Escolher trilha"}
-                        </button>
+                        <button id="homeProfessionalButton" type="button" class="primary">${professionalTrack ? "Começar ou continuar" : "Escolher trilha"}</button>
                     </article>
                 </section>
-            </section>
-        `;
+            </section>`;
 
         this.querySelector("#homeChooseLanguage")?.addEventListener("click", () => router.navigate("languages"));
         this.querySelector("#homeConfigureLanguage")?.addEventListener("click", () => router.navigate("language-setup"));
+        this.querySelector("#startFirstActivityButton")?.addEventListener("click", () => router.navigate("lesson"));
+        this.querySelector("#continueLearningButton")?.addEventListener("click", () => router.navigate("lesson"));
         this.querySelector("#startReviewButton")?.addEventListener("click", () => router.navigate("review"));
-        this.querySelector("#startLessonButton")?.addEventListener("click", () => router.navigate("languages"));
+        this.querySelector("#startLessonButton")?.addEventListener("click", () => router.navigate("lesson"));
         this.querySelector("#openSpeakingButton")?.addEventListener("click", () => router.navigate("speaking"));
         this.querySelector("#openMentorButton")?.addEventListener("click", () => router.navigate("mentor"));
-        this.querySelector("#homeProfessionalButton")?.addEventListener("click", () => {
-            router.navigate(professionalTrack ? "professional-study" : "professional");
-        });
+        this.querySelector("#homeProfessionalButton")?.addEventListener("click", () => router.navigate(professionalTrack ? "professional-study" : "professional"));
     }
 }
 
-if (!customElements.get("ef-home-page")) {
-    customElements.define("ef-home-page", EFHomePage);
-}
+if (!customElements.get("ef-home-page")) customElements.define("ef-home-page", EFHomePage);
