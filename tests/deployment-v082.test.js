@@ -24,7 +24,7 @@ test("arquivos que causaram 404 fazem parte do pacote", async () => {
 
 test("manifesto possui capturas mobile e wide válidas", async () => {
     const manifest = JSON.parse(await readFile(path.join(root, "manifest.json"), "utf8"));
-    assert.equal(manifest.version, "0.8.2");
+    assert.equal(manifest.version, "0.9.0");
     assert.ok(Array.isArray(manifest.screenshots));
     assert.ok(manifest.screenshots.some((item) => !item.form_factor));
     assert.ok(manifest.screenshots.some((item) => item.form_factor === "wide"));
@@ -37,5 +37,5 @@ test("diagnóstico de publicação está incluído", async () => {
     const html = await readFile(path.join(root, "diagnostico-publicacao.html"), "utf8");
     assert.match(html, /review\.service\.js/);
     assert.match(html, /speech-recognition\.service\.js/);
-    assert.match(html, /0\.8\.2/);
+    assert.match(html, /0\.9\.0/);
 });
