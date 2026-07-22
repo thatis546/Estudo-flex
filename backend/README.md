@@ -1,4 +1,4 @@
-# Backend Estudo Flex Languages 0.9.0
+# Backend Estudo Flex Languages 0.9.1
 
 Gateway Node.js separado do GitHub Pages. Ele protege a chave do provedor e processa texto, áudio e imagens sem expor credenciais no navegador.
 
