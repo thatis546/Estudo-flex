@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.9.0 — 2026-07-21
+
+- Refeito o onboarding com tutorial, opções verticais, confirmação antes do envio e rolagem interna.
+- Removidas respostas livres e perguntas redundantes da conversa inicial.
+- Corrigida a pausa do onboarding para abrir e retomar pela Home.
+- Revisado o diagnóstico de 12 evidências, sem cartões de confiança e sem CEFR na interface.
+- Conectados finalidade, tempo, frequência e interesses entre onboarding, conclusão, Home e Perfil Vivo.
+- Adicionadas atividades do Mentor, incluindo descrição de imagem.
+- Mantido o Communication Lab separado da conversa com o Mentor.
+- Corrigidos layouts de computador, Professional Lab, Passaporte, Perfil e editor de avatar.
+- Adicionado endpoint multimodal de imagem do Mentor.
+- Atualizados PWA, versionamento, diagnóstico de publicação e documentação.
+- Ampliada a suíte para 60 testes automatizados.
+
+## 0.8.1 — 2026-07-16
+
+- Corrigida a inicialização no GitHub Pages após atualizações parciais ou cache antigo.
+- Criado bootstrap versionado que limpa caches incompatíveis antes de carregar o aplicativo.
+- Carregamento dos Web Components passou a ser isolado por arquivo; um módulo ausente não derruba toda a aplicação.
+- Service Worker passou a usar rede primeiro para JavaScript, CSS e JSON.
+- Adicionada tela de recuperação com limpeza de cache e Service Worker.
+- Migração de conquistas e XP antigos ficou tolerante a registros malformados.
+- Mensagens de erro agora indicam publicação incompleta ou mistura de versões.
+
 ## 0.8.0 — 2026-07-16
 
 - Substituído o diagnóstico curto por 12 evidências independentes em cada idioma.

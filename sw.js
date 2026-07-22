@@ -1,17 +1,17 @@
-const CACHE_NAME = "estudoflex-v0.8.0";
+const CACHE_NAME = "estudoflex-v0.9.0";
 
 const ESSENTIAL_ASSETS = [
     "./",
     "./index.html",
     "./manifest.json",
     "./favicon.ico",
+    "./core/bootstrap.js",
     "./core/app.js",
     "./core/router.js",
     "./core/state.js",
     "./core/storage.js",
     "./core/diagnostic.js",
     "./core/profile-options.js",
-    "./components/register.js",
     "./css/main.css"
 ];
 
@@ -55,6 +55,7 @@ const OPTIONAL_ASSETS = [
     "./services/language-profile.service.js",
     "./services/review.service.js",
     "./services/audio-recorder.service.js",
+    "./services/speech-recognition.service.js",
     "./services/professional.js",
     "./data/achievement-catalog.js",
     "./data/languages.js",
@@ -84,21 +85,42 @@ const OPTIONAL_ASSETS = [
     "./css/toast.css",
     "./css/animations.css",
     "./css/responsive.css",
+    "./css/v090.css",
     "./assets/avatars/default-user.svg",
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-512.png",
     "./assets/icons/icon-maskable-512.png",
-    "./assets/logos/logo-mark.svg"
+    "./assets/logos/logo-mark.svg",
+    "./diagnostico-publicacao.html",
+    "./assets/screenshots/welcome-mobile.png",
+    "./assets/screenshots/welcome-wide.png"
 ];
 
 function isApiRequest(url) {
     return url.pathname.includes("/api/") || url.pathname.endsWith("/api");
 }
 
+function isVersionSensitiveRequest(request, url) {
+    return request.destination === "script" ||
+        request.destination === "style" ||
+        [".js", ".mjs", ".css", ".json"].some((extension) => url.pathname.endsWith(extension));
+}
+
 async function cacheOptionalAssets(cache) {
-    await Promise.allSettled(
-        OPTIONAL_ASSETS.map((url) => cache.add(url))
-    );
+    await Promise.allSettled(OPTIONAL_ASSETS.map((url) => cache.add(url)));
+}
+
+async function networkFirst(request) {
+    try {
+        const response = await fetch(request, { cache: "no-store" });
+        if (response.ok && response.type === "basic") {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, response.clone());
+        }
+        return response;
+    } catch {
+        return (await caches.match(request)) || Response.error();
+    }
 }
 
 self.addEventListener("install", (event) => {
@@ -128,44 +150,25 @@ self.addEventListener("fetch", (event) => {
     if (url.origin !== self.location.origin || isApiRequest(url)) return;
 
     if (request.mode === "navigate") {
-        event.respondWith((async () => {
-            try {
-                const response = await fetch(request);
-                if (response.ok) {
-                    const cache = await caches.open(CACHE_NAME);
-                    await cache.put("./index.html", response.clone());
-                }
-                return response;
-            } catch {
-                return (
-                    await caches.match("./index.html") ||
-                    await caches.match("./") ||
-                    new Response("Aplicativo indisponível offline.", {
-                        status: 503,
-                        headers: { "Content-Type": "text/plain; charset=utf-8" }
-                    })
-                );
-            }
-        })());
+        event.respondWith(networkFirst(request).then(async (response) => {
+            if (response.ok) return response;
+            return (
+                await caches.match("./index.html") ||
+                await caches.match("./") ||
+                response
+            );
+        }));
+        return;
+    }
+
+    if (isVersionSensitiveRequest(request, url)) {
+        event.respondWith(networkFirst(request));
         return;
     }
 
     event.respondWith((async () => {
         const cached = await caches.match(request);
-        if (cached) {
-            event.waitUntil((async () => {
-                try {
-                    const response = await fetch(request);
-                    if (response.ok && response.type === "basic") {
-                        const cache = await caches.open(CACHE_NAME);
-                        await cache.put(request, response);
-                    }
-                } catch {
-                    // O recurso em cache continua disponível.
-                }
-            })());
-            return cached;
-        }
+        if (cached) return cached;
 
         try {
             const response = await fetch(request);
