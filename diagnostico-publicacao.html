@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnóstico de publicação — Estudo Flex 0.9.0</title>
+    <title>Diagnóstico de publicação — Estudo Flex 0.9.1</title>
     <style>
         :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
         body { margin: 0; padding: 24px; background: #f6f7fc; color: #202236; }
@@ -19,7 +19,7 @@
 </head>
 <body>
 <main>
-    <p><strong>Estudo Flex Languages 0.9.0</strong></p>
+    <p><strong>Estudo Flex Languages 0.9.1</strong></p>
     <h1>Diagnóstico da publicação</h1>
     <p>Esta página verifica se os arquivos essenciais chegaram ao GitHub Pages.</p>
     <button id="run" type="button">Verificar novamente</button>
@@ -27,15 +27,15 @@
     <ul id="results"></ul>
 </main>
 <script type="module">
-const version = "0.9.0";
+const version = "0.9.1";
 const files = [
     "./index.html", "./manifest.json", "./sw.js", "./core/bootstrap.js", "./core/app.js",
     "./core/router.js", "./core/state.js", "./core/storage.js", "./core/profile-options.js",
-    "./css/main.css", "./css/v090.css", "./data/onboarding.js",
-    "./services/achievement-service.js", "./services/review.service.js",
+    "./css/main.css", "./css/v090.css", "./css/v091.css", "./data/onboarding.js",
+    "./services/achievement-service.js", "./services/review.service.js", "./services/lesson.service.js",
     "./services/speech-recognition.service.js", "./services/mentor-chat.service.js",
     "./components/onboarding/ef-welcome.js", "./components/onboarding/ef-onboarding.js",
-    "./components/onboarding/ef-goals.js", "./components/home/ef-home-page.js",
+    "./components/onboarding/ef-goals.js", "./components/home/ef-home-page.js", "./components/lesson/ef-lesson-page.js",
     "./components/review/ef-review-page.js", "./components/speaking/ef-speaking-page.js",
     "./components/mentor/ef-mentor-page.js", "./components/profile/ef-profile-page.js",
     "./components/passport/ef-passport-page.js", "./components/professional/ef-professional-study-page.js"
@@ -64,7 +64,7 @@ async function run() {
     const failures = checks.filter((item) => !item.ok);
     summary.textContent = failures.length
         ? `${failures.length} arquivo(s) ausente(s). Reenvie o pacote completo para a raiz do repositório.`
-        : "Todos os arquivos essenciais da versão 0.9.0 estão publicados.";
+        : "Todos os arquivos essenciais da versão 0.9.1 estão publicados.";
 }
 document.getElementById("run").addEventListener("click", run);
 run();

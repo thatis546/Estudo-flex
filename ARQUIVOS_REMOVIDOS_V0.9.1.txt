@@ -1,0 +1,3 @@
+Estudo Flex Languages 0.9.1 — arquivos removidos em relação à versão 0.9.0
+
+Nenhum arquivo removido nesta versão.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.1 — 2026-07-22
+
+- Corrigida a rolagem e a conclusão do passo de metas do onboarding em celulares.
+- Removida a reconstrução completa da página ao selecionar interesses.
+- Sincronizados tempo diário, frequência, interesses, objetivo e contato com o perfil específico de cada idioma.
+- Criada a primeira atividade adaptada ao contato anterior com o idioma.
+- Bloqueada a revisão antes de existir atividade concluída.
+- Removido o preenchimento automático da revisão com vocabulário nunca estudado.
+- Adicionada proveniência obrigatória aos itens de revisão e migração para excluir filas legadas inválidas.
+- Ajustados intervalos de revisão conforme contato anterior e desempenho.
+- Atualizados Home, Perfil Vivo, conclusão do onboarding, cartão de idioma, rotas, PWA e testes.
+
 ## 0.9.0 — 2026-07-21
 
 - Refeito o onboarding com tutorial, opções verticais, confirmação antes do envio e rolagem interna.

@@ -1,4 +1,4 @@
-# Estudo Flex Languages — versão 0.9.0
+# Estudo Flex Languages — versão 0.9.1
 
 Aplicação web progressiva para aprendizagem personalizada de idiomas, com perfis independentes por língua, Mentor, Communication Lab, trilhas profissionais, revisão, Perfil Vivo e Passaporte.
 
@@ -65,7 +65,7 @@ Use o pacote identificado como **github-raiz** e envie o conteúdo diretamente p
 https://SEU-USUARIO.github.io/SEU-REPOSITORIO/diagnostico-publicacao.html
 ```
 
-Consulte `DEPLOY_GITHUB_V0.9.0.md` para o procedimento completo.
+Consulte `DEPLOY_GITHUB_V0.9.1.md` para o procedimento completo.
 
 ## Limites desta versão
 
@@ -77,4 +77,4 @@ Consulte `DEPLOY_GITHUB_V0.9.0.md` para o procedimento completo.
 - a geração de imagem e a detecção de conquistas dependem de validação do backend e não concedem XP automaticamente;
 - chamadas reais ao Gemini e testes com microfone físico precisam ser homologados no ambiente de publicação.
 
-Consulte `ALTERACOES_V0.9.0.md` e `AUDITORIA_V0.9.0.md` para o detalhamento da entrega.
+Consulte `ALTERACOES_V0.9.1.md` e `AUDITORIA_V0.9.1.md` para o detalhamento da entrega.

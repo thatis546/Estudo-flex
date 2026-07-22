@@ -1,4 +1,4 @@
-const CACHE_NAME = "estudoflex-v0.9.0";
+const CACHE_NAME = "estudoflex-v0.9.1";
 
 const ESSENTIAL_ASSETS = [
     "./",
@@ -43,6 +43,7 @@ const OPTIONAL_ASSETS = [
     "./components/professional/ef-professional-list.js",
     "./components/professional/ef-professional-study-page.js",
     "./components/review/ef-review-page.js",
+    "./components/lesson/ef-lesson-page.js",
     "./components/languages/ef-language-setup.js",
     "./components/languages/ef-language-diagnostic.js",
     "./services/achievement-service.js",
@@ -53,6 +54,7 @@ const OPTIONAL_ASSETS = [
     "./services/communication-lab.service.js",
     "./services/mentor-chat.service.js",
     "./services/language-profile.service.js",
+    "./services/lesson.service.js",
     "./services/review.service.js",
     "./services/audio-recorder.service.js",
     "./services/speech-recognition.service.js",
@@ -86,6 +88,7 @@ const OPTIONAL_ASSETS = [
     "./css/animations.css",
     "./css/responsive.css",
     "./css/v090.css",
+    "./css/v091.css",
     "./assets/avatars/default-user.svg",
     "./assets/icons/icon-192.png",
     "./assets/icons/icon-512.png",
