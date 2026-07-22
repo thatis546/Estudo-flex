@@ -1,0 +1,242 @@
+/* Estudo Flex Languages 0.9.1 — correções de onboarding móvel e fluxo aprender → revisar */
+
+/* O conteúdo ativo nunca pode aumentar a largura do shell. */
+[data-page]:not([hidden]),
+[data-page]:not([hidden]) > *,
+.goals-page,
+.lesson-page,
+.review-page {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* O fieldset nativo possui min-width que costuma estourar telas móveis. */
+.goals-page fieldset.mentor-section {
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.goals-page .choice-grid,
+.goals-page .tag-list,
+.goals-page .tag-editor,
+.goals-page .goals-actions {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.goals-page .choice-grid .quick-reply,
+.goals-page .tag-list .tag,
+.goals-page .tag-editor input,
+.goals-page .tag-editor button {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.choice-card--discover.is-selected,
+.choice-card--discover[aria-pressed="true"] {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--text);
+}
+
+/* Página da primeira atividade. */
+.lesson-page {
+    display: grid;
+    gap: 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+.lesson-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+.lesson-header > div,
+.lesson-content-card {
+    min-width: 0;
+}
+
+.lesson-content-card {
+    display: grid;
+    gap: 14px;
+    text-align: left;
+}
+
+.lesson-content-card h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 8vw, 2.7rem);
+    overflow-wrap: break-word;
+}
+
+.lesson-content-card > strong {
+    font-size: 1.15rem;
+    color: var(--primary);
+}
+
+.lesson-difficulty-note {
+    display: grid;
+    gap: 5px;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+}
+
+.lesson-review-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--font-sm, .9rem);
+    text-align: center;
+}
+
+.lesson-complete-card,
+.lesson-empty-card,
+.review-empty-card {
+    display: grid;
+    gap: 14px;
+    text-align: left;
+}
+
+.lesson-complete-icon,
+.review-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.home-action-card--first-activity {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.home-action-card--review-waiting {
+    background: var(--surface-secondary);
+}
+
+/* Mobile: um único viewport rolável, sem botão escondido no passo 2. */
+@media (max-width: 479px) {
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        min-height: 100%;
+    }
+
+    .app-shell {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        max-width: none;
+        overflow: hidden;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    main {
+        min-height: 0;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior-y: contain;
+        scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom));
+        padding: 16px 14px calc(24px + env(safe-area-inset-bottom));
+    }
+
+    [data-page]:not([hidden]) {
+        display: block;
+        flex: none;
+        min-height: min-content;
+    }
+
+    .onboarding-chat-shell {
+        height: calc(100dvh - 32px);
+        min-height: 0;
+        max-height: none;
+    }
+
+    .onboarding-chat-scroll {
+        min-height: 0;
+        padding-bottom: 24px;
+        touch-action: pan-y;
+    }
+
+    .onboarding-chat-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        padding: 8px 0 calc(4px + env(safe-area-inset-bottom));
+        background: linear-gradient(to bottom, transparent, var(--surface) 18%);
+    }
+
+    .goals-page {
+        gap: 14px;
+        padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    }
+
+    .goals-form-card {
+        padding: 16px;
+    }
+
+    .choice-grid--compact {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tag-editor {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .goals-actions {
+        position: sticky;
+        bottom: calc(-24px - env(safe-area-inset-bottom));
+        z-index: 20;
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+        margin: 0 -14px;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border);
+        background: color-mix(in srgb, var(--surface) 96%, transparent);
+        box-shadow: 0 -12px 24px rgba(20, 24, 48, .08);
+        backdrop-filter: blur(10px);
+    }
+
+    .goals-actions button {
+        width: 100%;
+        min-height: 48px;
+    }
+
+    .finish-facts > div {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .lesson-header {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+}
+
+@supports not (background: color-mix(in srgb, white 50%, black)) {
+    .home-action-card--first-activity {
+        box-shadow: 0 0 0 2px rgba(91, 92, 235, .12);
+    }
+
+    @media (max-width: 479px) {
+        .goals-actions {
+            background: var(--surface);
+        }
+    }
+}
