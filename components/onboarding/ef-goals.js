@@ -2,6 +2,7 @@ import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
 import { state } from "../../core/state.js";
 import { getPurposeSummary } from "../../core/profile-options.js";
+import { migrateInitialProfileToCurrentLanguage } from "../../services/language-profile.service.js";
 
 const DEFAULT_INTERESTS = [
     "Filmes e séries", "Música", "Tecnologia", "Engenharia",
@@ -42,6 +43,10 @@ class EFGoals extends HTMLElement {
             ...this.selectedInterests
         ])).filter((item) => item !== DISCOVER_INTERESTS);
         this.render();
+        requestAnimationFrame(() => {
+            const main = document.getElementById("mainContent");
+            if (main) main.scrollTop = 0;
+        });
     }
 
     render() {
@@ -134,9 +139,23 @@ class EFGoals extends HTMLElement {
                 this.selectedInterests.delete(DISCOVER_INTERESTS);
                 if (this.selectedInterests.has(interest)) this.selectedInterests.delete(interest);
                 else this.selectedInterests.add(interest);
-                this.render();
+                this.updateInterestControls();
             });
             container.appendChild(button);
+        });
+    }
+
+    updateInterestControls() {
+        const discoverButton = this.querySelector("#discoverInterestsButton");
+        if (discoverButton) {
+            const selected = this.selectedInterests.has(DISCOVER_INTERESTS);
+            discoverButton.setAttribute("aria-pressed", String(selected));
+            discoverButton.classList.toggle("is-selected", selected);
+        }
+        this.querySelectorAll("#interestsGroup .tag").forEach((button) => {
+            const selected = this.selectedInterests.has(button.textContent.trim());
+            button.classList.toggle("selected", selected);
+            button.setAttribute("aria-pressed", String(selected));
         });
     }
 
@@ -154,7 +173,7 @@ class EFGoals extends HTMLElement {
             const active = this.selectedInterests.has(DISCOVER_INTERESTS);
             this.selectedInterests.clear();
             if (!active) this.selectedInterests.add(DISCOVER_INTERESTS);
-            this.render();
+            this.updateInterestControls();
         });
 
         const input = this.querySelector("#customTagInput");
@@ -169,7 +188,8 @@ class EFGoals extends HTMLElement {
             this.selectedInterests.delete(DISCOVER_INTERESTS);
             this.selectedInterests.add(interest);
             input.value = "";
-            this.render();
+            this.renderInterests();
+            this.updateInterestControls();
         };
         this.querySelector("#addTagButton")?.addEventListener("click", add);
         input?.addEventListener("keydown", (event) => {
@@ -222,6 +242,7 @@ class EFGoals extends HTMLElement {
                 interests: [...this.selectedInterests]
             }
         });
+        migrateInitialProfileToCurrentLanguage();
         storage.save();
         router.navigate("level-test");
     }

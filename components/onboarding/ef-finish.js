@@ -3,7 +3,12 @@ import { storage } from "../../core/storage.js";
 import { state } from "../../core/state.js";
 import { getProfileOptionLabel, getPurposeSummary } from "../../core/profile-options.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
-import { buildLanguageDailyPlan, getCurrentLanguageRecord } from "../../services/language-profile.service.js";
+import {
+    buildLanguageDailyPlan,
+    getCurrentLanguageRecord,
+    getEffectiveLearningProfile,
+    migrateInitialProfileToCurrentLanguage
+} from "../../services/language-profile.service.js";
 import { registerAchievementEvent } from "../../services/achievement-service.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -20,8 +25,9 @@ class EFFinish extends HTMLElement {
 
     onRouteEnter() {
         const profile = state.profile || {};
-        const record = getCurrentLanguageRecord() || state.getLanguage(profile.language);
         if (!profile.name) return router.navigate("welcome", "replace");
+        migrateInitialProfileToCurrentLanguage();
+        const record = getCurrentLanguageRecord() || state.getLanguage(profile.language);
         if (!record?.diagnosticResult?.completedAt) return router.navigate("level-test", "replace");
 
         this.profile = profile;
@@ -35,7 +41,7 @@ class EFFinish extends HTMLElement {
 
     render(plan) {
         const language = EF_LANGUAGES[this.record.code] || this.record;
-        const learningProfile = this.record.learningProfile || {};
+        const learningProfile = getEffectiveLearningProfile(this.record, this.profile);
         const details = learningProfile.goalDetails || {};
         const purpose = getPurposeSummary(learningProfile.goal);
         const interests = Array.isArray(details.interests) ? details.interests.filter(Boolean) : [];
@@ -71,7 +77,7 @@ class EFFinish extends HTMLElement {
                         <p class="eyebrow">SUA PRIMEIRA SESSÃO</p>
                         <h3 id="firstPlanTitle">Comece sem conteúdo inventado</h3>
                         <ul>
-                            <li><span>1</span><div><strong>${escapeHTML(plan.review)}</strong><small>Vocabulário e expressões realmente disponíveis no idioma.</small></div></li>
+                            <li><span>1</span><div><strong>${escapeHTML(plan.review)}</strong><small>A revisão só será criada depois de uma atividade concluída.</small></div></li>
                             <li><span>2</span><div><strong>${escapeHTML(plan.lesson)}</strong><small>Conteúdo relacionado à finalidade e aos interesses escolhidos.</small></div></li>
                             <li><span>3</span><div><strong>${escapeHTML(plan.communication)}</strong><small>Análise técnica de fala; a conversa com o Mentor fica em outra aba.</small></div></li>
                         </ul>

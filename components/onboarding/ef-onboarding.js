@@ -1,6 +1,7 @@
 import { router } from "../../core/router.js";
 import { storage } from "../../core/storage.js";
 import { state, createEmptyDiagnosticResult } from "../../core/state.js";
+import { migrateInitialProfileToCurrentLanguage } from "../../services/language-profile.service.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
 import {
     CONTACT_OPTIONS,
@@ -288,6 +289,8 @@ class EFOnboarding extends HTMLElement {
                 stats: existingLanguage?.stats || {}
             });
         }
+
+        if (state.currentLanguage) migrateInitialProfileToCurrentLanguage();
 
         this.chatStep += 1;
         state.updateProfile({
