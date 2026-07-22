@@ -1,6 +1,7 @@
 import { state } from "../../core/state.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
 import { getCurrentLanguageRecord, getLanguageLevelLabel } from "../../services/language-profile.service.js";
+import { getProfileOptionLabel, getPurposeSummary } from "../../core/profile-options.js";
 import { removeLanguageInterest } from "../../services/profile-privacy.service.js";
 import { getUserTrack } from "../../services/professional.js";
 
@@ -8,9 +9,6 @@ const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[character]));
 
-const GOALS = { travel: "Viagens", work: "Trabalho", study: "Estudos", relocation: "Morar em outro país", conversation: "Conversação", exam: "Prova ou certificação", culture: "Cultura e entretenimento" };
-const CONTEXTS = { daily: "Dia a dia", work: "Ambiente profissional", university: "Universidade", travel: "Viagens", immigration: "Imigração e burocracias", family: "Família e relações pessoais" };
-const CONTACT = { never: "Nunca estudou", basics: "Palavras e cumprimentos", sometimes: "Algum estudo anterior", frequent: "Uso frequente", advanced: "Conversa e produz textos" };
 const FREQUENCY = { "1x": "1 vez por semana", "2x": "2 vezes por semana", "3x": "3 vezes por semana", "5x": "5 vezes por semana", daily: "Todos os dias" };
 const DEADLINE = { "no-deadline": "Sem prazo fixo", "3-months": "3 meses", "6-months": "6 meses", "1-year": "1 ano", "2-years": "2 anos" };
 
@@ -34,6 +32,9 @@ class EFProfileCard extends HTMLElement {
         const record = getCurrentLanguageRecord();
         const language = record ? EF_LANGUAGES[record.code] : null;
         const learningProfile = record?.learningProfile || {};
+        const purpose = getPurposeSummary(learningProfile.goal);
+        const purposeDescription = learningProfile.goalDescription || purpose?.goalDescription || "Objetivo ainda não detalhado.";
+        const purposeUseCase = learningProfile.useCase || purpose?.useCase || "Situação de uso ainda não definida.";
         const result = record?.diagnosticResult || {};
         const details = learningProfile.goalDetails || {};
         const stats = record?.stats || {};
@@ -56,7 +57,7 @@ class EFProfileCard extends HTMLElement {
                         <div><strong>${escapeHTML(catalog.name || item.name || item.code)}</strong><small>${escapeHTML(status)}</small></div>
                     </div>
                     <dl>
-                        <div><dt>Finalidade</dt><dd>${escapeHTML(GOALS[itemProfile.goal] || itemProfile.goal || "Não definida")}</dd></div>
+                        <div><dt>Finalidade</dt><dd>${escapeHTML(getProfileOptionLabel(item.code, "goal", itemProfile.goal) || "Não definida")}</dd></div>
                         <div><dt>Uso concreto</dt><dd>${escapeHTML(itemProfile.useCase || "Não informado")}</dd></div>
                         <div><dt>Rotina</dt><dd>${Number(itemProfile.dailyMinutes) || 0} min · ${escapeHTML(FREQUENCY[itemDetails.frequency] || itemDetails.frequency || "sem frequência")}</dd></div>
                         <div><dt>Trilha profissional</dt><dd>${escapeHTML(itemTrack?.title || "Não selecionada")}</dd></div>
@@ -76,8 +77,8 @@ class EFProfileCard extends HTMLElement {
                     <p class="eyebrow">Perfil Vivo</p>
                     <h2 class="profile-name">${escapeHTML(profile.name || "Estudante")}</h2>
                     <p class="profile-username">${language ? `${escapeHTML(language.flag || "🌍")} ${escapeHTML(language.name)}` : "Nenhum idioma selecionado"}</p>
-                    <span class="profile-rank">${escapeHTML(GOALS[learningProfile.goal] || learningProfile.goal || "Objetivo ainda não definido")}</span>
-                    <p class="profile-join-date">${escapeHTML(learningProfile.goalDescription || "Descreva seu objetivo para personalizar o plano.")}</p>
+                    <span class="profile-rank">${escapeHTML(getProfileOptionLabel(record?.code, "goal", learningProfile.goal) || "Objetivo ainda não definido")}</span>
+                    <p class="profile-join-date">${escapeHTML(purposeDescription)}</p>
                 </div>
             </article>
 
@@ -95,9 +96,9 @@ class EFProfileCard extends HTMLElement {
 
             ${record ? `
                 <section class="profile-detail-grid" aria-label="Contexto do idioma atual">
-                    <article class="card profile-detail-card"><small>Jornada atual</small><h3>${escapeHTML(record.journeyLabel || "Diagnóstico pendente")}</h3><p>Confiança: ${Math.round((Number(result.confidence) || 0) * 100)}%</p></article>
-                    <article class="card profile-detail-card"><small>Onde será usado</small><h3>${escapeHTML(CONTEXTS[learningProfile.lifeContext] || learningProfile.lifeContext || "Não definido")}</h3><p>${escapeHTML(learningProfile.useCase || "Situação concreta não informada")}</p></article>
-                    <article class="card profile-detail-card"><small>Contato anterior</small><h3>${escapeHTML(CONTACT[learningProfile.contact] || learningProfile.contact || "Não informado")}</h3><p>${Number(learningProfile.dailyMinutes) || 0} minutos · ${escapeHTML(FREQUENCY[details.frequency] || details.frequency || "frequência não definida")}</p></article>
+                    <article class="card profile-detail-card"><small>Jornada atual</small><h3>${escapeHTML(record.journeyLabel || "Diagnóstico pendente")}</h3><p>Ela continuará sendo ajustada conforme atividades e uso real.</p></article>
+                    <article class="card profile-detail-card"><small>Onde será usado</small><h3>${escapeHTML(getProfileOptionLabel(record.code, "lifeContext", learningProfile.lifeContext) || "Não definido")}</h3><p>${escapeHTML(purposeUseCase)}</p></article>
+                    <article class="card profile-detail-card"><small>Contato anterior</small><h3>${escapeHTML(getProfileOptionLabel(record.code, "contact", learningProfile.contact) || "Não informado")}</h3><p>${Number(learningProfile.dailyMinutes) || 0} minutos · ${escapeHTML(FREQUENCY[details.frequency] || details.frequency || "frequência não definida")}</p></article>
                     <article class="card profile-detail-card"><small>Prazo e trilha profissional</small><h3>${escapeHTML(DEADLINE[details.deadline] || details.deadline || "Sem prazo")}</h3><p>${escapeHTML(track?.title || "Nenhuma trilha profissional selecionada")}</p></article>
                 </section>
 

@@ -1,8 +1,9 @@
 import { state } from "../../core/state.js";
 import { getCurrentLanguageRecord } from "../../services/language-profile.service.js";
+import { getLearningStyleLabel } from "../../core/profile-options.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
-const LABELS = { immediate: "Correção imediata", final: "Correção ao final", silent: "Sem interrupções", pt: "Explicações em português", guided: "Imersão guiada", immersive: "Imersão ampliada", Visual: "Visual", Listening: "Auditiva", Reading: "Leitura", Practice: "Prática", Visuel: "Visual", Écoute: "Auditiva", Lecture: "Leitura", Pratique: "Prática", Visuell: "Visual", Hören: "Auditiva", Lesen: "Leitura", Üben: "Prática" };
+const LABELS = { immediate: "Correção imediata", final: "Correção ao final", silent: "Sem interrupções", pt: "Explicações em português", guided: "Imersão guiada", immersive: "Imersão ampliada" };
 
 class EFLearningStyle extends HTMLElement {
     constructor() { super(); this.refresh = this.render.bind(this); }
@@ -13,7 +14,7 @@ class EFLearningStyle extends HTMLElement {
         const profile = state.profile || {};
         const record = getCurrentLanguageRecord();
         const languageProfile = record?.learningProfile || {};
-        const style = LABELS[languageProfile.learningStyle || profile.learningStyle] || languageProfile.learningStyle || profile.learningStyle || "Ainda em análise";
+        const style = getLearningStyleLabel(languageProfile.learningStyle || profile.learningStyle) || "Ainda em análise";
         const support = LABELS[profile.supportMode] || "Suporte adaptativo";
         const correction = LABELS[profile.mentor?.correctionStyle] || "Correção ao final";
         const minutes = Number(languageProfile.dailyMinutes || profile.dailyMinutes) || 0;
