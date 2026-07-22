@@ -8,22 +8,56 @@ function normalize(value) {
         .replace(/[\u0300-\u036f]/g, "");
 }
 
-function countWords(value) {
-    return String(value ?? "").trim().split(/\s+/).filter(Boolean).length;
+function tokenize(value) {
+    return normalize(value)
+        .replace(/[^a-zA-ZÀ-ÿß'’-]+/g, " ")
+        .split(/\s+/)
+        .filter(Boolean);
 }
+
+function countWords(value) { return tokenize(value).length; }
 
 function noPreviousContact(value) {
     return ["never", "nunca", "jamais", "nie", "mai", "ninguno", "nenhum"].includes(normalize(value));
 }
 
+const LANGUAGE_MARKERS = Object.freeze({
+    en: ["i", "am", "is", "are", "the", "and", "because", "have", "my", "with", "was", "would", "can"],
+    fr: ["je", "suis", "est", "le", "la", "et", "parce", "avec", "mon", "une", "dans", "mais", "peux"],
+    de: ["ich", "bin", "ist", "der", "die", "das", "und", "weil", "mit", "mein", "aber", "kann", "habe"],
+    it: ["io", "sono", "è", "il", "la", "e", "perché", "con", "mio", "una", "ma", "posso", "ho"],
+    es: ["yo", "soy", "es", "el", "la", "y", "porque", "con", "mi", "una", "pero", "puedo", "he"]
+});
+
+function languageCodeFromQuestion(question) {
+    const prefix = String(question?.id || "").split("-")[0].toLowerCase();
+    return LANGUAGE_MARKERS[prefix] ? prefix : "";
+}
+
 function scoreTextAnswer(answer, question) {
-    const words = countWords(answer);
-    const target = Math.max(4, Number(question?.minimumWords) || 8);
-    if (!words) return 0;
-    if (words >= target) return 4;
-    if (words >= Math.ceil(target * 0.65)) return 3;
-    if (words >= Math.ceil(target * 0.35)) return 2;
-    return 1;
+    const words = tokenize(answer);
+    const total = words.length;
+    if (!total) return 0;
+
+    const unique = new Set(words).size;
+    const diversity = unique / total;
+    const target = Math.max(5, Number(question?.minimumWords) || 8);
+    const languageCode = languageCodeFromQuestion(question);
+    const markers = LANGUAGE_MARKERS[languageCode] || [];
+    const markerCount = words.filter((word) => markers.includes(word)).length;
+    const repeatedSingleWord = unique <= 2 && total >= 4;
+    const mostlyPortuguese = languageCode && markerCount === 0 && total >= 5;
+
+    if (repeatedSingleWord || mostlyPortuguese) return 1;
+
+    let score = 1;
+    if (total >= Math.ceil(target * 0.45) && diversity >= 0.55) score = 2;
+    if (total >= Math.ceil(target * 0.8) && diversity >= 0.6 && markerCount >= 1) score = 3;
+    if (total >= target && diversity >= 0.65 && markerCount >= 2) score = 4;
+
+    // O avaliador local é deliberadamente conservador. Uma resposta longa não
+    // recebe pontuação alta apenas por tamanho; ela precisa conter sinais do idioma.
+    return score;
 }
 
 function categoryLabel(category) {
@@ -39,10 +73,8 @@ function categoryLabel(category) {
 
 /**
  * Avaliação inicial do Estudo Flex.
- *
  * A jornada não equivale diretamente ao CEFR e não é uma certificação.
- * “Vivendo o idioma” nunca é concedido em um único diagnóstico: exige
- * evidências longitudinais de uso real registradas no Perfil Vivo.
+ * “Vivendo o idioma” exige evidências longitudinais e nunca é concedido aqui.
  */
 export function evaluateLanguageDiagnostic({ questions = [], answers = [], scores = [], contact = "" } = {}) {
     const safeQuestions = Array.isArray(questions) ? questions : [];
@@ -85,19 +117,15 @@ export function evaluateLanguageDiagnostic({ questions = [], answers = [], score
     const completionRatio = evidence.length ? answered / evidence.length : 0;
 
     let journeyId = "explorando";
-    if (completionRatio >= 0.75 && ratio >= 0.28 && basicEvidence >= 3 && productionWords >= 4) {
+    if (completionRatio >= 0.83 && ratio >= 0.32 && basicEvidence >= 4 && productionWords >= 6) {
         journeyId = "descobrindo";
     }
-    if (completionRatio >= 0.9 && ratio >= 0.52 && basicEvidence >= 5 && developedProductions >= 1 && productionWords >= 12) {
+    if (completionRatio >= 0.92 && ratio >= 0.56 && basicEvidence >= 5 && developedProductions >= 1 && productionWords >= 18) {
         journeyId = "construindo";
     }
     if (
-        completionRatio >= 0.95 &&
-        ratio >= 0.72 &&
-        advancedEvidence >= 3 &&
-        developedProductions >= 2 &&
-        productionWords >= 35 &&
-        !noPreviousContact(contact)
+        completionRatio >= 0.98 && ratio >= 0.76 && advancedEvidence >= 3 &&
+        developedProductions >= 2 && productionWords >= 45 && !noPreviousContact(contact)
     ) {
         journeyId = "conectando";
     }
@@ -107,14 +135,14 @@ export function evaluateLanguageDiagnostic({ questions = [], answers = [], score
         ratio: values.maximum ? values.points / values.maximum : 0,
         answered: values.answered
     }));
-    const strengths = categories.filter((item) => item.ratio >= 0.7).map((item) => categoryLabel(item.category));
-    const developmentAreas = categories.filter((item) => item.ratio < 0.55).map((item) => categoryLabel(item.category));
-    if (journeyId === "explorando" && !strengths.length) strengths.push("Disponibilidade para iniciar a jornada");
+    const strengths = categories.filter((item) => item.ratio >= 0.72).map((item) => categoryLabel(item.category));
+    const developmentAreas = categories.filter((item) => item.ratio < 0.58).map((item) => categoryLabel(item.category));
+    if (journeyId === "explorando" && !strengths.length) strengths.push("Primeiras referências do idioma");
     if (noPreviousContact(contact)) developmentAreas.push("Contato prático e familiaridade com o idioma");
 
     const confidence = Number(Math.min(
-        journeyId === "conectando" ? 0.78 : 0.86,
-        0.28 + completionRatio * 0.34 + Math.min(0.2, evidence.length / 60) + (productionWords >= 12 ? 0.08 : 0)
+        journeyId === "conectando" ? 0.78 : 0.84,
+        0.25 + completionRatio * 0.35 + Math.min(0.16, evidence.length / 75) + (developedProductions >= 1 ? 0.06 : 0)
     ).toFixed(2));
 
     return {
@@ -146,7 +174,6 @@ export function scoreDiagnosticAnswer(question, answer, selectedPoints = 0) {
         : Math.max(0, Math.min(4, Number(selectedPoints) || 0));
 }
 
-// Compatibilidade com chamadas antigas; resultado deliberadamente conservador.
 export function evaluateShortDiagnostic(scores = [], totalQuestions = scores.length) {
     const questions = Array.from({ length: Math.max(0, Number(totalQuestions) || 0) }, (_, index) => ({
         id: `legacy-${index + 1}`,

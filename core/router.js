@@ -59,7 +59,9 @@ class Router {
     }
 
     getDefaultPage() {
-        return state.isOnboardingCompleted() ? "home" : this.getResumePage();
+        if (state.isOnboardingCompleted()) return "home";
+        if (state.profile?.name && state.profile?.onboardingProgress?.paused) return "home";
+        return this.getResumePage();
     }
 
     getResumePage() {
@@ -72,13 +74,12 @@ class Router {
             "goal",
             "contact",
             "dailyMinutes",
-            "lifeContext",
             "learningStyle"
         ];
         if (onboardingFields.some((field) => !profile[field])) return "onboarding";
 
         const goals = profile.goalDetails || {};
-        if (!profile.goalDescription || !profile.useCase || !goals.deadline || !goals.frequency || !Array.isArray(goals.interests) || goals.interests.length === 0) {
+        if (!goals.deadline || !goals.frequency || !Array.isArray(goals.interests) || goals.interests.length === 0) {
             return "goals";
         }
 
@@ -93,7 +94,8 @@ class Router {
         if (completed && ONBOARDING_PAGES.has(resolved)) {
             resolved = "home";
         } else if (!completed && APP_PAGES.has(resolved)) {
-            resolved = this.getResumePage();
+            const paused = Boolean(state.profile?.onboardingProgress?.paused);
+            resolved = paused && resolved === "home" ? "home" : this.getResumePage();
         }
 
         return resolved;

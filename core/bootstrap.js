@@ -1,4 +1,4 @@
-const APP_VERSION = "0.8.2";
+const APP_VERSION = "0.9.0";
 const VERSION_STORAGE_KEY = "estudo_flex_frontend_version";
 const CACHE_PREFIX = "estudoflex-";
 
@@ -7,14 +7,26 @@ const CRITICAL_DEPLOYMENT_FILES = Object.freeze([
     "./core/router.js",
     "./core/state.js",
     "./core/storage.js",
+    "./core/profile-options.js",
+    "./data/onboarding.js",
+    "./data/diagnostic-bank.js",
     "./services/achievement-service.js",
     "./services/review.service.js",
     "./services/speech-recognition.service.js",
+    "./services/mentor-chat.service.js",
     "./components/onboarding/ef-welcome.js",
+    "./components/onboarding/ef-onboarding.js",
+    "./components/onboarding/ef-goals.js",
+    "./components/onboarding/ef-finish.js",
     "./components/home/ef-home-page.js",
     "./components/review/ef-review-page.js",
+    "./components/mentor/ef-mentor-page.js",
     "./components/speaking/ef-speaking-page.js",
-    "./css/main.css"
+    "./components/professional/ef-professional-study-page.js",
+    "./components/profile/ef-profile-page.js",
+    "./components/passport/ef-passport-page.js",
+    "./css/main.css",
+    "./css/v090.css"
 ]);
 
 async function clearLegacyCaches() {

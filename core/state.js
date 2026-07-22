@@ -1,7 +1,8 @@
 import { getJourney, getJourneyLabel, journeyFromLegacyCefr } from "../data/journeys.js";
 import { EF_LANGUAGES } from "../data/languages.js";
+import { canonicalizeProfileOption, getPurposeSummary } from "./profile-options.js";
 
-const STATE_SCHEMA_VERSION = 7;
+const STATE_SCHEMA_VERSION = 8;
 const THEMES = new Set(["light", "dark", "system"]);
 const TOP_LEVEL_KEYS = new Set(["schemaVersion", "user", "profile", "languages", "currentLanguage", "settings"]);
 
@@ -98,6 +99,7 @@ function createInitialState() {
             lifeContext: "",
             learningStyle: "",
             onboardingComplete: false,
+            onboardingTutorialSeen: false,
             onboardingProgress: { step: 0, paused: false, updatedAt: null },
             goalDetails: { deadline: "", frequency: "", interests: [] },
             journeyId: "",
@@ -174,16 +176,18 @@ function normalizeLearningProfile(value, globalProfile = {}) {
     const defaults = createEmptyLanguageProfile(globalProfile);
     const source = isPlainObject(value) ? value : {};
     const goalDetails = isPlainObject(source.goalDetails) ? source.goalDetails : {};
+    const goal = canonicalizeProfileOption("goal", source.goal || globalProfile.goal);
+    const purpose = getPurposeSummary(goal);
     return {
         ...defaults,
         ...source,
-        goal: text(source.goal),
-        goalDescription: text(source.goalDescription),
-        useCase: text(source.useCase),
-        contact: text(source.contact),
-        dailyMinutes: Math.max(0, toNumber(source.dailyMinutes, 0)),
-        lifeContext: text(source.lifeContext),
-        learningStyle: text(source.learningStyle || globalProfile.learningStyle),
+        goal,
+        goalDescription: text(source.goalDescription) || purpose?.goalDescription || "",
+        useCase: text(source.useCase) || purpose?.useCase || "",
+        contact: canonicalizeProfileOption("contact", source.contact || globalProfile.contact),
+        dailyMinutes: Math.max(0, toNumber(source.dailyMinutes ?? globalProfile.dailyMinutes, 0)),
+        lifeContext: canonicalizeProfileOption("lifeContext", source.lifeContext || purpose?.lifeContext || globalProfile.lifeContext),
+        learningStyle: canonicalizeProfileOption("learningStyle", source.learningStyle || globalProfile.learningStyle),
         goalDetails: {
             ...defaults.goalDetails,
             ...goalDetails,
@@ -308,14 +312,15 @@ class State {
             nativeLanguage: text(sourceProfile.nativeLanguage) || "pt-BR",
             language: normalizeLanguageCode(sourceProfile.language),
             supportMode: text(sourceProfile.supportMode) || "pt",
-            goal: text(sourceProfile.goal),
+            goal: canonicalizeProfileOption("goal", sourceProfile.goal),
             goalDescription: text(sourceProfile.goalDescription),
             useCase: text(sourceProfile.useCase),
-            contact: text(sourceProfile.contact),
+            contact: canonicalizeProfileOption("contact", sourceProfile.contact),
             dailyMinutes: Math.max(0, toNumber(sourceProfile.dailyMinutes, 0)),
-            lifeContext: text(sourceProfile.lifeContext),
-            learningStyle: text(sourceProfile.learningStyle),
+            lifeContext: canonicalizeProfileOption("lifeContext", sourceProfile.lifeContext),
+            learningStyle: canonicalizeProfileOption("learningStyle", sourceProfile.learningStyle),
             onboardingComplete: Boolean(sourceProfile.onboardingComplete),
+            onboardingTutorialSeen: Boolean(sourceProfile.onboardingTutorialSeen),
             onboardingProgress: {
                 ...defaults.profile.onboardingProgress,
                 ...(isPlainObject(sourceProfile.onboardingProgress) ? sourceProfile.onboardingProgress : {}),
@@ -379,6 +384,13 @@ class State {
                 recentActivities: Array.isArray(learning.recentActivities) ? clone(learning.recentActivities).slice(0, 50) : []
             }
         };
+
+        const profilePurpose = getPurposeSummary(this.profile.goal);
+        if (profilePurpose) {
+            if (!this.profile.goalDescription) this.profile.goalDescription = profilePurpose.goalDescription;
+            if (!this.profile.useCase) this.profile.useCase = profilePurpose.useCase;
+            if (!this.profile.lifeContext) this.profile.lifeContext = profilePurpose.lifeContext;
+        }
 
         this.languages = (Array.isArray(source.languages) ? source.languages : [])
             .map((record) => normalizeLanguageRecord(record, this.profile))
@@ -477,6 +489,16 @@ class State {
             achievements: patch.achievements ? clone(patch.achievements) : this.profile.achievements,
             xpLedger: patch.xpLedger ? clone(patch.xpLedger) : this.profile.xpLedger
         };
+        this.profile.goal = canonicalizeProfileOption("goal", this.profile.goal);
+        this.profile.contact = canonicalizeProfileOption("contact", this.profile.contact);
+        this.profile.lifeContext = canonicalizeProfileOption("lifeContext", this.profile.lifeContext);
+        this.profile.learningStyle = canonicalizeProfileOption("learningStyle", this.profile.learningStyle);
+        const purpose = getPurposeSummary(this.profile.goal);
+        if (purpose) {
+            if (!this.profile.goalDescription) this.profile.goalDescription = purpose.goalDescription;
+            if (!this.profile.useCase) this.profile.useCase = purpose.useCase;
+            if (!this.profile.lifeContext) this.profile.lifeContext = purpose.lifeContext;
+        }
         return this.profile;
     }
 
