@@ -48,6 +48,7 @@ export function ensureLanguageRecord(code) {
         diagnosticProgress: { step: 0, answers: [], scores: [], questionIds: [] },
         dailyPlan: { review: "", lesson: "", communication: "" },
         reviewQueue: [],
+        activityHistory: [],
         professional: createEmptyProfessionalState(),
         communicationLab: createEmptyCommunicationState(),
         xp: 0,
@@ -58,6 +59,40 @@ export function ensureLanguageRecord(code) {
 
 export function getCurrentLanguageRecord() {
     return state.getLanguage(state.currentLanguage);
+}
+
+export function getEffectiveLearningProfile(record = getCurrentLanguageRecord(), fallbackProfile = state.profile) {
+    const fallback = createEmptyLanguageProfile(fallbackProfile || {});
+    const current = record?.learningProfile || {};
+    const currentDetails = current.goalDetails || {};
+    const fallbackDetails = fallback.goalDetails || {};
+    const choose = (value, fallbackValue) => {
+        const normalized = String(value ?? "").trim();
+        return normalized || String(fallbackValue ?? "").trim();
+    };
+    const interests = Array.isArray(currentDetails.interests) && currentDetails.interests.length
+        ? currentDetails.interests
+        : fallbackDetails.interests;
+
+    return {
+        ...fallback,
+        ...current,
+        goal: choose(current.goal, fallback.goal),
+        goalDescription: choose(current.goalDescription, fallback.goalDescription),
+        useCase: choose(current.useCase, fallback.useCase),
+        contact: choose(current.contact, fallback.contact),
+        dailyMinutes: Math.max(0, Number(current.dailyMinutes || fallback.dailyMinutes) || 0),
+        lifeContext: choose(current.lifeContext, fallback.lifeContext),
+        learningStyle: choose(current.learningStyle, fallback.learningStyle),
+        supportMode: choose(current.supportMode, fallback.supportMode) || "pt",
+        goalDetails: {
+            ...fallbackDetails,
+            ...currentDetails,
+            deadline: choose(currentDetails.deadline, fallbackDetails.deadline),
+            frequency: choose(currentDetails.frequency, fallbackDetails.frequency),
+            interests: [...new Set((interests || []).map((item) => String(item).trim()).filter(Boolean))]
+        }
+    };
 }
 
 export function isLanguageReady(record = getCurrentLanguageRecord()) {
@@ -154,12 +189,34 @@ export function resetLanguageDiagnostic(code = state.currentLanguage) {
 
 export function buildLanguageDailyPlan(record = getCurrentLanguageRecord()) {
     if (!record) return { review: "", lesson: "", communication: "" };
-    const interests = record.learningProfile?.goalDetails?.interests || [];
-    const interest = interests[0] || record.learningProfile?.useCase || "situações do dia a dia";
+    const learningProfile = getEffectiveLearningProfile(record);
+    const interests = learningProfile.goalDetails?.interests || [];
+    const discoverInterest = "Descobrir meus interesses aos poucos";
+    const usefulInterests = interests.filter((item) => item !== discoverInterest);
+    const interest = usefulInterests[0] || learningProfile.useCase || "situações do dia a dia";
     const journey = record.journeyLabel || "Explorando";
+    const completedActivities = Number(record.stats?.lessonsCompleted) || 0;
+    const validReviewItems = Array.isArray(record.reviewQueue)
+        ? record.reviewQueue.filter((item) => item?.sourceActivityId && item?.introducedAt)
+        : [];
+    const now = Date.now();
+    const dueReviews = validReviewItems.filter((item) => {
+        const dueAt = Date.parse(item.nextReviewAt || item.introducedAt || 0);
+        return !Number.isFinite(dueAt) || dueAt <= now;
+    });
+
+    let review = "Conclua a primeira atividade para liberar revisões";
+    if (completedActivities > 0 && dueReviews.length > 0) {
+        review = `Revisão de ${dueReviews.length} ${dueReviews.length === 1 ? "item" : "itens"} de ${record.name}`;
+    } else if (completedActivities > 0 && validReviewItems.length > 0) {
+        review = "Revisão programada para depois da aprendizagem";
+    }
+
     return {
-        review: `Revisão rápida de ${record.name}`,
-        lesson: `${journey}: conteúdo novo ligado a ${interest}`,
+        review,
+        lesson: completedActivities > 0
+            ? `${journey}: próxima atividade ligada a ${interest}`
+            : `${journey}: primeira atividade ligada a ${interest}`,
         communication: `Communication Lab de ${record.name}`
     };
 }
@@ -204,38 +261,7 @@ export function migrateInitialProfileToCurrentLanguage() {
     const record = ensureLanguageRecord(code);
     if (!record) return null;
 
-    const current = record.learningProfile || createEmptyLanguageProfile(state.profile);
-    const source = createEmptyLanguageProfile(state.profile);
-    const choose = (existing, incoming) => {
-        const existingText = String(existing ?? "").trim();
-        const incomingText = String(incoming ?? "").trim();
-        return existingText || incomingText;
-    };
-    const sourceDetails = state.profile.goalDetails || {};
-    const currentDetails = current.goalDetails || {};
-
-    record.learningProfile = {
-        ...source,
-        ...current,
-        goal: choose(current.goal, state.profile.goal),
-        goalDescription: choose(current.goalDescription, state.profile.goalDescription),
-        useCase: choose(current.useCase, state.profile.useCase),
-        contact: choose(current.contact, state.profile.contact),
-        dailyMinutes: Math.max(0, Number(current.dailyMinutes || state.profile.dailyMinutes) || 0),
-        lifeContext: choose(current.lifeContext, state.profile.lifeContext),
-        learningStyle: choose(current.learningStyle, state.profile.learningStyle),
-        supportMode: choose(current.supportMode, state.profile.supportMode),
-        goalDetails: {
-            ...sourceDetails,
-            ...currentDetails,
-            deadline: choose(currentDetails.deadline, sourceDetails.deadline),
-            frequency: choose(currentDetails.frequency, sourceDetails.frequency),
-            interests: [...new Set([
-                ...(Array.isArray(currentDetails.interests) ? currentDetails.interests : []),
-                ...(Array.isArray(sourceDetails.interests) ? sourceDetails.interests : [])
-            ].map((item) => String(item).trim()).filter(Boolean))]
-        }
-    };
+    record.learningProfile = getEffectiveLearningProfile(record, state.profile);
 
     if (!record.diagnosticResult?.completedAt && state.profile.levelResult?.completedAt && state.profile.levelResult?.journeyId) {
         record.journeyId = state.profile.levelResult.journeyId;
