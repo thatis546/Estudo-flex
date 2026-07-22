@@ -14,6 +14,7 @@ const APP_PAGES = new Set([
     "language-setup",
     "language-diagnostic",
     "review",
+    "lesson",
     "profile",
     "passport",
     "mentor",

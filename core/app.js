@@ -15,6 +15,7 @@ const ROUTE_COMPONENTS = Object.freeze({
     "language-setup": "ef-language-setup",
     "language-diagnostic": "ef-language-diagnostic",
     review: "ef-review-page",
+    lesson: "ef-lesson-page",
     profile: "ef-profile-page",
     passport: "ef-passport-page",
     mentor: "ef-mentor-page",
@@ -42,6 +43,7 @@ const COMPONENT_MODULES = Object.freeze([
     { path: "../components/languages/ef-language-diagnostic.js", tag: "ef-language-diagnostic", area: "languages" },
 
     { path: "../components/review/ef-review-page.js", tag: "ef-review-page", area: "review" },
+    { path: "../components/lesson/ef-lesson-page.js", tag: "ef-lesson-page", area: "lesson" },
 
     { path: "../components/profile/ef-profile-page.js", tag: "ef-profile-page", area: "profile" },
     { path: "../components/profile/ef-profile-card.js", tag: "ef-profile-card", area: "profile" },
