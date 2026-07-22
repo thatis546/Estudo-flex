@@ -2,15 +2,12 @@ import { state } from "../../core/state.js";
 import { router } from "../../core/router.js";
 import { EF_LANGUAGES } from "../../data/languages.js";
 import { getCurrentLanguageRecord, getLanguageLevelLabel, isLanguageReady } from "../../services/language-profile.service.js";
+import { getProfileOptionLabel, getPurposeSummary } from "../../core/profile-options.js";
 
 const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[character]));
 
-const GOALS = {
-    travel: "Viagens", work: "Trabalho", study: "Estudos", relocation: "Morar em outro país",
-    conversation: "Conversação", exam: "Prova ou certificação", culture: "Cultura e entretenimento"
-};
 
 export class EFLanguageCard extends HTMLElement {
     constructor() {
@@ -41,6 +38,10 @@ export class EFLanguageCard extends HTMLElement {
         const profile = record.learningProfile || {};
         const progress = Math.min(100, Math.max(0, Number(record.progress) || 0));
         const interests = profile.goalDetails?.interests || [];
+        const purpose = getPurposeSummary(profile.goal);
+        const purposeLabel = getProfileOptionLabel(code, "goal", profile.goal) || "A descobrir";
+        const purposeDescription = profile.goalDescription || purpose?.goalDescription || "Objetivo em construção";
+        const useCase = profile.useCase || purpose?.useCase || "Situação de uso em construção";
 
         this.innerHTML = `
             <article class="language-card" data-language="${escapeHTML(code)}">
@@ -56,8 +57,8 @@ export class EFLanguageCard extends HTMLElement {
 
                 ${ready ? `
                     <div class="language-card-context-grid">
-                        <div class="language-card-context"><small>Finalidade</small><strong>${escapeHTML(GOALS[profile.goal] || profile.goal || "A definir")}</strong><span>${escapeHTML(profile.goalDescription || "Objetivo detalhado não informado")}</span></div>
-                        <div class="language-card-context"><small>Situação concreta</small><strong>${escapeHTML(profile.lifeContext || "Contexto")}</strong><span>${escapeHTML(profile.useCase || "Situação de uso não informada")}</span></div>
+                        <div class="language-card-context"><small>Finalidade</small><strong>${escapeHTML(purposeLabel)}</strong><span>${escapeHTML(purposeDescription)}</span></div>
+                        <div class="language-card-context"><small>Situação concreta</small><strong>${escapeHTML(getProfileOptionLabel(code, "lifeContext", profile.lifeContext) || "A descobrir")}</strong><span>${escapeHTML(useCase)}</span></div>
                     </div>
                     <div class="language-card-context"><small>Interesses desta língua</small><strong>${escapeHTML(interests.length ? interests.join(" • ") : "Nenhum interesse selecionado")}</strong></div>
                     <div class="language-card-progress">

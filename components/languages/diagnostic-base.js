@@ -121,16 +121,12 @@ export class EFDiagnosticBase extends HTMLElement {
                 <article class="card diagnostic-result-card">
                     <p class="eyebrow">SUA JORNADA INICIAL</p>
                     <h1>${escapeHTML(result.journeyLabel)}</h1>
-                    <p>Esse resultado usa ${result.answeredQuestions} respostas e continuará sendo ajustado por evidências reais de estudo e uso do idioma.</p>
-                    <div class="profile-stats-grid">
-                        <div class="stat-card"><div class="stat-details"><small>Confiança inicial</small><strong>${Math.round(result.confidence * 100)}%</strong></div></div>
-                        <div class="stat-card"><div class="stat-details"><small>Evidências respondidas</small><strong>${result.answeredQuestions}/${result.evidence.totalQuestions}</strong></div></div>
-                    </div>
+                    <p>Esta é uma estimativa de partida. O Perfil Vivo continuará ajustando a jornada com base em atividades, revisões, produção e uso real do idioma.</p>
                     <div class="diagnostic-result-columns">
                         <div><h2>Pontos observados</h2><ul>${strengths}</ul></div>
                         <div><h2>Próximos focos</h2><ul>${development}</ul></div>
                     </div>
-                    <p class="form-help">“Vivendo o idioma” depende de uso real e evolução ao longo do tempo; não é liberado por um único teste.</p>
+                    <p class="form-help">O diagnóstico não é uma prova de certificação. “Vivendo o idioma” depende de uso real e evolução ao longo do tempo.</p>
                     <button id="diagnosticFinish" type="button" class="primary full">Continuar</button>
                 </article>
             </section>
