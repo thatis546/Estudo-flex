@@ -1,4 +1,4 @@
-# Backend Estudo Flex Languages 0.8.2
+# Backend Estudo Flex Languages 0.9.0
 
 Gateway Node.js separado do GitHub Pages. Ele protege a chave do provedor e processa texto, áudio e imagens sem expor credenciais no navegador.
 
@@ -11,7 +11,7 @@ Gateway Node.js separado do GitHub Pages. Ele protege a chave do provedor e proc
 ## Instalação
 
 ```bash
-npm install
+npm ci
 cp .env.example .env
 npm start
 ```
@@ -24,7 +24,7 @@ npm start
 - `TRUST_PROXY`: `true` quando o provedor usa proxy reverso;
 - `GEMINI_API_KEY`: chave somente do backend;
 - `GEMINI_TEXT_MODEL`: modelo de texto;
-- `GEMINI_MULTIMODAL_MODEL`: modelo capaz de analisar áudio/imagem;
+- `GEMINI_MULTIMODAL_MODEL`: modelo capaz de analisar áudio e imagem;
 - `GEMINI_IMAGE_MODEL`: modelo capaz de gerar imagens;
 - `MAX_REQUESTS_PER_MINUTE`: limite simples por IP.
 
@@ -32,11 +32,21 @@ npm start
 
 ### `GET /api/health`
 
-Verifica se o servidor está ativo.
+Verifica se o servidor está ativo e informa a versão.
 
 ### `POST /api/gemini`
 
-Recebe mensagens e contexto autorizado do Mentor. Retorna resposta textual estruturada, sugestões de memória e possível candidato a conquista. O frontend ainda valida e registra cada resultado.
+Recebe mensagens e contexto autorizado do Mentor. Retorna resposta textual estruturada, sugestões de memória e possível candidato a conquista. O frontend continua validando cada resultado.
+
+### `POST /api/mentor/image-description`
+
+`multipart/form-data`:
+
+- `image`: PNG, JPEG ou WebP;
+- `instruction`: orientação opcional do estudante;
+- `context`: JSON com idioma e jornada autorizados.
+
+Transforma uma imagem enviada em uma atividade textual de descrição. Não executa análise de pronúncia.
 
 ### `POST /api/speech/transcribe`
 
@@ -45,7 +55,7 @@ Recebe mensagens e contexto autorizado do Mentor. Retorna resposta textual estru
 - `audio`: arquivo de até 10 MB;
 - `language`: código do idioma.
 
-Retorna transcrição, idioma detectado e confiança estimada.
+Retorna transcrição, idioma detectado e confiança estimada pelo provedor.
 
 ### `POST /api/avatar/validate`
 
@@ -53,7 +63,7 @@ Retorna transcrição, idioma detectado e confiança estimada.
 
 - `avatar`: PNG, JPEG ou WebP.
 
-Valida um único rosto ilustrado e rejeita fotografia real.
+Valida um único rosto ilustrado e rejeita fotografia real, múltiplos personagens, logos e imagens sem rosto.
 
 ### `POST /api/avatar/generate`
 
@@ -61,11 +71,11 @@ Gera um avatar a partir das características escolhidas e executa uma segunda va
 
 ### `POST /api/achievement/image`
 
-Gera somente a ilustração central de uma conquista. Em seguida, verifica ação, contexto linguístico, avatar, personagens extras, texto e bandeiras contraditórias.
+Gera somente a ilustração central de uma conquista. Depois verifica ação, idioma, avatar, personagens extras, texto e bandeiras contraditórias. O texto do card é montado pelo frontend a partir dos dados persistidos.
 
 ### `POST /api/achievements/detect`
 
-Analisa uma mensagem literal e só sugere conquista quando existe ação concreta já realizada.
+Analisa uma mensagem literal e só sugere conquista quando existe uma ação concreta já realizada.
 
 ## Segurança desta etapa
 
@@ -74,6 +84,8 @@ Analisa uma mensagem literal e só sugere conquista quando existe ação concret
 - JSON estrito e limite de corpo;
 - upload em memória com limite de tamanho e MIME permitido;
 - limite de requisições por IP;
-- mensagens de erro internas ocultadas em falhas 5xx.
+- respostas estruturadas por esquema;
+- mensagens internas ocultadas em falhas 5xx;
+- o modelo não recebe autorização para calcular XP, apagar dados ou executar SQL.
 
-Para produção completa ainda serão necessários autenticação, autorização por usuário, persistência, logs estruturados, armazenamento seguro de arquivos, fila de processamento e rate limiting distribuído.
+Para produção completa ainda serão necessários autenticação, autorização por usuário, banco persistente, Secret Manager ou Vault, logs estruturados, fila de processamento, armazenamento seguro de arquivos e rate limiting distribuído.
